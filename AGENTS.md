@@ -54,7 +54,7 @@ Windows is the primary platform. Use PowerShell syntax with backslash paths.
 1. **Never make a paid FAL call without explicit user authorization.** Every paid path requires `--yes`. Show a plan or `--dry-run` first and state the exact call counts (video generations and background requests separately).
 2. **Never commit `.env` or `output/`.** They are gitignored; keep them untracked. Never print, echo, or log the FAL key.
 3. **Always pad the reference before generation.** `generate` rejects zero padding. Defaults are `0.25` width and `0.10` height per edge. Unpadded uploads clip weapons and limbs.
-4. **Background removal defaults to the packed spritesheet** (`--background-mode sheet`), one BiRefNet request per action. Use `frames` only when the user asks for maximum edge fidelity and accepts the cost.
+4. **Background removal is optional and is skipped when VFX are allowed.** Default mode is the packed spritesheet (`--background-mode sheet`), one BiRefNet request per action. Sets whose prompts permit VFX, particles, or splash trails should use `"background_remove_option": "none"`: effects are part of the animation, and segmentation can eat soft particle edges. Use `frames` only when the user asks for maximum edge fidelity and accepts the cost.
 5. **Do not overwrite reviewed output.** Write to a new folder unless the user explicitly asks to rebuild in place.
 6. **Preserve raw artifacts.** Never delete `source_video.mp4`, `frames/`, or `spritesheet.png` when adding derived outputs.
 
@@ -77,6 +77,10 @@ Windows is the primary platform. Use PowerShell syntax with backslash paths.
 ## Gotchas
 
 - Frame counts differ by sampling mode: `diverse` can return fewer frames than requested on low-motion clips; `uniform` always fills the count. Report this instead of silently padding.
+- **VFX colour must contrast with the white generation background.** White or pale effects are invisible on the canvas and are deleted by background removal. Specify saturated gold, crimson, or black-ink effects instead.
+- Permitting strong VFX stops the model inventing unwanted smear arcs, but over-scale effects can occlude the character. Tune intensity, do not re-suppress effects.
+- **Heavy padding shrinks the subject.** At `0.5` on both axes the model frames the whole padded canvas and the character can drop to roughly 15% of frame area. Prefer `0.25-0.35` unless a specific effect needs the room, and measure the subject bbox before accepting a set. Use asymmetric padding when only one axis needs space (for example `0.8` horizontal, `0.5` vertical for a thrown projectile).
+- Similarity scoring must stay bounded: `_normalized_subject` downscales to `working_size` (512 px) before numpy work so large references or frames cannot exhaust memory.
 - `metadata.json` is the source of truth for layout, timings, endpoint decisions, and background provenance. Keep it in sync when adding outputs.
 - H3 may add smear arcs and deform rigid props despite explicit prompt constraints. Treat this as a model limitation; never mask it with image processing.
 - BiRefNet sheet mode downscales the whole atlas, so edges are softer than per-frame mode (measured ~0.94 mean IoU on one clip).

@@ -1,0 +1,11 @@
+Create one clear comedic defeat animation for this character, ending in a still pose on the ground. ONE action only, no loop.
+
+The character faces right, wobbles, loses his balance, tips backward, and flops onto his back with his belly up, limbs sprawled and glasses askew, then stays motionless. End with the whole body visible and still; do not fade out, dissolve, or leave the frame.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, dazed expression, loose off-white short-sleeve t-shirt with one small cute cream cat mascot print with a green sprout on the chest, black cargo shorts with a tan bear-face keychain and a short red strap at the left hip, black smartwatch on one wrist, white socks, chunky white and black sneakers with red accents, pale tan skin, thick black ink outlines. Keep proportions and cartoon style identical. Both arms and both hands stay intact — never duplicate a limb.
+
+EFFECTS: a mid-grey dust cloud bursts up where his body hits the ground, grey grit and small pebbles scatter outward, and a soft slate-grey haze settles and fades to nothing. Use mid-to-dark grey so the effects read on the white background. Keep it non-graphic.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale, framed wide with generous empty space on every side. The whole body, hair, glasses, and feet stay well inside the frame throughout the fall and after landing. No camera movement, zoom, pan, rotation, or reframing.
+
+No attacker, no projectile, no text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

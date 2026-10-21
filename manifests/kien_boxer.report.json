@@ -1,0 +1,64 @@
+{
+  "manifest": "D:\\Ann\\Projects\\fal_sprite\\manifests\\kien_boxer.json",
+  "characters": [
+    {
+      "name": "kien_boxer",
+      "animations": [
+        {
+          "name": "idle",
+          "generated": false,
+          "frames": 8,
+          "alpha_frames": 8,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\idle"
+        },
+        {
+          "name": "walk",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 8,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\walk"
+        },
+        {
+          "name": "run",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 8,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\run"
+        },
+        {
+          "name": "normal_attack",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 8,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\normal_attack"
+        },
+        {
+          "name": "skill_attack",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 8,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\skill_attack"
+        },
+        {
+          "name": "hurt",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 8,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\hurt"
+        },
+        {
+          "name": "death",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 8,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\death"
+        }
+      ],
+      "report": {
+        "overview": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\animation_set_overview.jpg",
+        "index": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\animation_set_index.json",
+        "gif": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_kien_boxer\\animation_set.gif"
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "name": "kien_boxer",
+    "image_references": "art_references/5.kien_nguyen.png",
+    "output_root": "output/option2_animation_set_kien_boxer",
+    "padding_width": 0.35,
+    "padding_height": 0.25,
+    "frame_count": 8,
+    "columns": 4,
+    "animations_prompt": {
+      "idle": {
+        "prompt": "prompt/animation_set_kien_boxer/idle.txt",
+        "selection": "uniform",
+        "keep_endpoints": true
+      },
+      "walk": { "prompt": "prompt/animation_set_kien_boxer/walk.txt", "selection": "uniform" },
+      "run": { "prompt": "prompt/animation_set_kien_boxer/run.txt", "selection": "uniform" },
+      "normal_attack": "prompt/animation_set_kien_boxer/normal_attack.txt",
+      "skill_attack": "prompt/animation_set_kien_boxer/skill_attack.txt",
+      "hurt": { "prompt": "prompt/animation_set_kien_boxer/hurt.txt", "selection": "uniform" },
+      "death": "prompt/animation_set_kien_boxer/death.txt"
+    },
+    "background_remove_option": "none"
+  }
+]

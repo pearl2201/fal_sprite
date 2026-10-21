@@ -1,0 +1,11 @@
+Create one short comedic gas-release skill attack, then return to the idle stance. ONE single release only — no repeated bursts, no loop.
+
+The character faces right. He glances over his shoulder with a mischievous grin, turns away so his back faces the viewer, plants both feet wide, and bends forward with his rear raised. He releases one single burst of toxic gas that billows out behind him as a large rolling green-grey cloud. He then straightens up, turns back, and grins, settling into the idle pose.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, mischievous grin, black short-sleeve t-shirt with one small brown poop emoji on the chest, dark grey board shorts with small brown poop emoji and beige pug patterns and a white drawstring, black slide sandals with a brown poop motif, pale tan skin, thick black ink outlines. Keep proportions and cartoon style identical. Both arms, both hands, and both sandals stay visible and intact — never duplicate a limb.
+
+EFFECTS: strong stylised VFX in mid-grey, slate-grey and sickly olive-green tones. One large billowing cloud of grey-green gas expands outward with curling smoke shapes, wispy tendrils, and drifting particle specks. Grey dust puffs from the ground beneath his feet, and a few splash-style grey droplets scatter. Use mid-to-dark grey and olive tones with clear dark edges so the cloud reads strongly against the white background — avoid pale or near-white smoke.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body and feet stay inside the frame with generous margins, and the gas cloud stays inside the frame. No camera movement, zoom, pan, rotation, or reframing.
+
+Do not show a target, enemy, or any graphic waste. Keep it stylised cartoon smoke. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

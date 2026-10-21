@@ -11,7 +11,7 @@ Turns one approved character illustration into per-action spritesheets with tran
 
 1. **Never run a paid step without explicit user confirmation.** `generate` and `run_batch.py` need `--yes`. Always show `--dry-run` output first and state the exact call count.
 2. **Always pad the reference.** `generate` rejects zero padding. Defaults are `0.25` width per horizontal edge and `0.10` height per vertical edge. Without margins the model clips weapons and limbs.
-3. **Keep background removal on the packed sheet by default** (`--background-mode sheet`, or `"background_remove_option": "spritesheet"`). That is one BiRefNet request per action instead of one per frame. Use `frames` only when the user asks for sharper final-art edges.
+3. **Background removal is optional; set it to `none` when the prompts allow VFX.** Otherwise keep the packed-sheet default (`--background-mode sheet`, or `"background_remove_option": "spritesheet"`), which is one BiRefNet request per action instead of one per frame. Effects, particles, and splash trails are part of the animation, so a VFX set should keep its raw frames and be reviewed from `frames/`. Use `frames` mode only when the user asks for sharper final-art edges.
 4. **Never print or commit the FAL key.** It comes from `.env` (`FAL_API`, `FAL_KEY`, or `FAL_API_KEY`).
 5. **Preserve prior outputs.** Write to a new folder rather than overwriting a reviewed set unless the user asks for a rebuild.
 
@@ -91,6 +91,9 @@ Do not claim success from exit codes alone:
 | Symptom | Cause | Fix |
 |---|---|---|
 | Weapon or limbs cropped | Insufficient padding, or model reframing | Raise `--horizontal-padding` / `--vertical-padding`; regenerate |
+| VFX invisible or missing after removal | White/pale effects on a white background | Specify saturated gold / crimson / black-ink effects instead |
+| Character hidden during a skill | Effect scale too large | Reduce effect size; keep bursts adjacent to the fist |
+| Character tiny in frame | Very large padding | Lower padding to `0.25-0.35`, or trim the margin locally (free) |
 | Only 2-4 frames produced | `diverse` sampling on a low-motion clip | Re-run `process` with `--selection uniform` (no API cost) |
 | Bright arcs or streaks | Model-invented speed effects | Cannot be fixed by threshold tuning; regenerate the action or discard those frames |
 | Shield or blade changes shape | Rigid prop deformation during fast motion | Regenerate; two-prop characters fail more often than single-weapon ones |

@@ -1,0 +1,11 @@
+Create one short comedic booger-flick attack, then return to the idle stance. ONE single attack only — exactly one projectile, thrown once. No repeated throws, no second shot, no loop.
+
+The character faces right. He leans back, digs a finger into his nose with a sly grin, pulls out a single glob, loads it on his thumb, then snaps his thumb to flick it forward. Exactly one gooey grey-green glob travels forward in a straight line across the empty space in front of him and exits the frame. He then straightens up and grins proudly, settling back to the idle pose.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, sly toothy grin, loose off-white short-sleeve t-shirt with one small cute cream cat mascot print with a green sprout on the chest, black cargo shorts with a tan bear-face keychain and a short red strap at the left hip, black smartwatch on one wrist, white socks, chunky white and black sneakers with red accents, pale tan skin, thick black ink outlines. Keep proportions and cartoon style identical. Both arms, both hands, and both sneakers stay visible and intact — never duplicate a hand or arm.
+
+EFFECTS: strong stylised VFX in mid-grey, slate-grey and sickly olive-grey tones. The single glob leaves a long splash trail of grey droplets and a wispy grey smear trailing behind it as it flies. A small dust puff kicks up from his planted foot, and a faint grey haze puffs from his mouth as he grins. Colour the projectile clearly — a dark grey-green blob with a wet highlight — so it reads against the white background.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale, framed wide with a large amount of empty space in front of the character for the projectile's flight path. The whole body and the entire flight path of the projectile stay well inside the frame with generous margins on every side. No camera movement, zoom, pan, rotation, or reframing.
+
+Do not show a target, enemy, impact on a target, or any gore. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

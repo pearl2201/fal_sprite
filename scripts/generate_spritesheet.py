@@ -246,12 +246,23 @@ def _select_diverse_indices(
     return sorted(selected)
 
 
-def _normalized_subject(image_source: Path | Image.Image, size: int = 128) -> Image.Image:
+def _normalized_subject(
+    image_source: Path | Image.Image,
+    size: int = 128,
+    working_size: int = 512,
+) -> Image.Image:
+    """Return a fixed white canvas holding the cropped subject, for similarity scoring.
+
+    The image is downscaled to ``working_size`` before array work so a large
+    reference or high-resolution frame cannot exhaust memory.
+    """
     if isinstance(image_source, Image.Image):
         image = image_source.convert("RGBA")
     else:
         with Image.open(image_source) as source:
             image = source.convert("RGBA")
+    if max(image.size) > working_size:
+        image.thumbnail((working_size, working_size), Image.Resampling.LANCZOS)
     rgba = np.asarray(image)
     if "A" in image.getbands() and np.min(rgba[:, :, 3]) < 255:
         mask = rgba[:, :, 3] > 8

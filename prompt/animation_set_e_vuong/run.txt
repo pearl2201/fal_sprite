@@ -1,0 +1,11 @@
+Create one continuous run-in-place animation for this character, facing right.
+
+The character sprints with a comedic heavy waddle: short fast stomping strides, belly bouncing, arms pumping low, glasses shifting on his face, mouth open in a strained grin. The feet cycle in place rather than travelling across the screen. One continuous run loop that returns to the starting pose.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, strained grin, black short-sleeve t-shirt with one small brown poop emoji on the chest, dark grey board shorts with small brown poop emoji and beige pug patterns and a white drawstring, black slide sandals with a brown poop motif, pale tan skin, thick black ink outlines. Keep proportions and cartoon style identical.
+
+EFFECTS: strong mid-grey dust clouds burst behind each foot plant, grey grit and small gravel specks spray backward, and short slate-grey speed streaks trail the body. Use mid-to-dark grey tones so the effects read clearly against the white background.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body, hair, glasses, and feet stay inside the frame with generous margins. No camera movement, zoom, pan, rotation, or reframing.
+
+No punching, no throwing, no bending over, no gas cloud; locomotion only. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

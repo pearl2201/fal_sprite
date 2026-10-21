@@ -1,0 +1,9 @@
+Create one clear knockout death animation for this boxer, ending in a still pose on the ground.
+
+The boxer faces right, takes a heavy hit, legs buckle, he staggers, then falls backward and lands flat on his back, arms sprawling, and stays motionless. End with the whole body visible and still; do not fade out, dissolve, or leave the frame. Add a dust cloud bursting up where the body hits the canvas, a few black-ink splash droplets scattering from the impact, and a soft crimson haze that fades to nothing. Non-graphic: no blood, no gore, no wounds.
+
+CHARACTER FIDELITY: preserve the original design exactly — muscular shirtless build, tan skin, dark spiky undercut hair, chin beard, dazed expression, white towel falling away across the body, glossy red boxing gloves with black and white cuffs, black shorts with red and white ornament, red sash belt with tails, white ankle wraps, black sandals, thick ink outlines. Exactly one glove per hand, always attached to an arm; the gloves do not detach or duplicate.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing. The whole body, both gloves, towel, and feet stay inside frame with generous margins throughout the fall and after landing. No camera movement, zoom, pan, rotation, or reframing.
+
+No attacker, no projectile, no weapons, no glowing blades, no text, no environment, no additional objects. Pure white background. One death action only, no loop. Output clean isolated game-character animation frames suitable for spritesheet extraction.

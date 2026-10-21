@@ -1,0 +1,11 @@
+Create one brief hurt reaction for this boxer, then return to the original guard stance.
+
+The boxer faces right, head snaps back from an unseen hit, torso recoils, one glove drops slightly, then he shakes it off and re-raises his guard. Add an impact burst at the moment of the hit: a compact gold flash, a short spray of black-ink splash droplets, sweat flying from the hair, and a puff of dust at the feet as he staggers. Use saturated gold and black-ink colours so the effect reads on the white background. Effects fade quickly across the reaction.
+
+CHARACTER FIDELITY: preserve the original design exactly — muscular shirtless build, tan skin, dark spiky undercut hair, chin beard, pained grimace, white towel jolting with the recoil, glossy red boxing gloves with black and white cuffs, black shorts with red and white ornament, red sash belt with tails, white ankle wraps, black sandals, thick ink outlines. Exactly one glove per hand, always attached to an arm, never duplicated.
+
+Do not show an attacker, projectile, weapon, blood, wounds, or damage to the body or costume.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body, both gloves, towel, and feet stay inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing.
+
+Effects: impact flash, ink splash droplets, sweat spray, foot dust. No weapons, no glowing blades, no text, no environment, no additional objects. Pure white background. One reaction only, no loop. Output clean isolated game-character animation frames suitable for spritesheet extraction.

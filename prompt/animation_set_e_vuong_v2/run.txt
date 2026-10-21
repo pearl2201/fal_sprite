@@ -1,0 +1,11 @@
+Create one continuous run-in-place animation for this character, facing right.
+
+The character sprints with a comedic heavy waddle: short fast stomping strides, belly bouncing, fists pumping low, glasses shifting on his face, mouth open in a strained grin. The feet cycle in place rather than travelling across the screen. One continuous run loop that returns to the starting pose.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, strained grin, loose off-white short-sleeve t-shirt with one small cute cream cat mascot print with a green sprout on the chest, black cargo shorts with a tan bear-face keychain and a short red strap at the left hip, black smartwatch on one wrist, white socks, chunky white and black sneakers with red accents, pale tan skin, thick black ink outlines. Keep proportions and cartoon style identical.
+
+EFFECTS: strong mid-grey dust clouds burst behind each foot plant, grey grit and small gravel specks spray backward, and short slate-grey speed streaks trail the body. Use mid-to-dark grey tones so the effects read clearly against the white background. Keep the streaks close behind the body so they stay inside the frame.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale, framed wide with generous empty space on every side. The whole body, hair, glasses, and feet stay well inside the frame. No camera movement, zoom, pan, rotation, or reframing.
+
+No punching, no throwing, no bending over, no gas cloud; locomotion only. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

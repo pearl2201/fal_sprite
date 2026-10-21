@@ -1,0 +1,11 @@
+Create one fast boxing combination attack, then return to the original guard stance. One attack only, no loop.
+
+The boxer faces right and throws a short, powerful combination: a lead jab, a straight cross, then a hook. Pivoting hips, driving legs, and a snapping shoulder. Strong cinematic VFX are wanted here: each landed punch produces a bright gold impact flash with a crimson radial shockwave ring, an outward spray of black and gold ink-splash streaks, and a burst of warm dust particles. The gloves trail short crimson speed streaks. The final hook leaves a large crescent-shaped gold shockwave arc that dissipates as the boxer recovers to guard. Use saturated gold, crimson, and black-ink colours so the effects read clearly against the white background.
+
+CHARACTER FIDELITY: preserve the original design exactly — muscular shirtless build, tan skin, dark spiky undercut hair, chin beard, gritted laughing face, white towel whipping with the motion, glossy red boxing gloves with black and white cuffs, black shorts with red and white ornament, red sash belt with tails, white ankle wraps, black sandals, thick ink outlines. The gloves are the hands: exactly one glove per hand, always attached to an arm. Never draw extra gloves, floating gloves, or duplicated arms.
+
+EFFECTS ALLOWED: impact flashes, shockwave rings, splash-style ink streaks, speed streaks, dust particles, sweat spray, and dramatic motion arcs. Effects must read as VFX layered around the punches, not as new weapons or extra limbs.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body, both gloves, towel, and feet stay inside frame with generous margins even at full extension. No camera movement, zoom, pan, rotation, or reframing.
+
+No weapons, no blades, no shields, no energy blades or glowing swords. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

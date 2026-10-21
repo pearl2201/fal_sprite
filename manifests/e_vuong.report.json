@@ -1,0 +1,64 @@
+{
+  "manifest": "D:\\Ann\\Projects\\fal_sprite\\manifests\\e_vuong.json",
+  "characters": [
+    {
+      "name": "e_vuong",
+      "animations": [
+        {
+          "name": "idle",
+          "generated": false,
+          "frames": 8,
+          "alpha_frames": 0,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\idle"
+        },
+        {
+          "name": "walk",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 0,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\walk"
+        },
+        {
+          "name": "run",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 0,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\run"
+        },
+        {
+          "name": "normal_attack",
+          "generated": true,
+          "frames": 5,
+          "alpha_frames": 0,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\normal_attack"
+        },
+        {
+          "name": "skill_attack",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 0,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\skill_attack"
+        },
+        {
+          "name": "hurt",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 0,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\hurt"
+        },
+        {
+          "name": "death",
+          "generated": true,
+          "frames": 8,
+          "alpha_frames": 0,
+          "output": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\death"
+        }
+      ],
+      "report": {
+        "overview": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\animation_set_overview.jpg",
+        "index": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\animation_set_index.json",
+        "gif": "D:\\Ann\\Projects\\fal_sprite\\output\\option2_animation_set_e_vuong\\animation_set.gif"
+      }
+    }
+  ]
+}

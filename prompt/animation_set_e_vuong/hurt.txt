@@ -1,0 +1,13 @@
+Create one brief hurt reaction for this character, then return to the idle stance. ONE reaction only, no loop.
+
+The character faces right, takes an unseen hit, recoils backward with his belly leading, arms flailing, glasses knocked crooked, mouth open in a pained grimace, then straightens his glasses and recovers to the idle pose.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, pained grimace, black short-sleeve t-shirt with one small brown poop emoji on the chest, dark grey board shorts with small brown poop emoji and beige pug patterns and a white drawstring, black slide sandals with a brown poop motif, pale tan skin, thick black ink outlines. Keep proportions and cartoon style identical. Both arms and both hands stay intact — never duplicate a limb.
+
+EFFECTS: a compact mid-grey impact burst with splash-style grey droplets scattering outward, a puff of grey dust at his feet as he staggers, and a small grey sweat spray. Use mid-to-dark grey so the effects read on the white background.
+
+Do not show an attacker, projectile, weapon, blood, or injury.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body, hair, glasses, and feet stay inside the frame with generous margins. No camera movement, zoom, pan, rotation, or reframing.
+
+No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

@@ -44,13 +44,15 @@ The seven-action pilot recorded billable units rather than USD, because H3 and B
 
 | Item | Endpoint | Units |
 |---|---|---:|
-| Video generations | `minimax/h3-max-turbo/image-to-video` | 7 clips (glaive) + 7 clips (skull warrior) |
+| Video generations | `minimax/h3-max-turbo/image-to-video` | 7 clips (glaive) + 7 (skull warrior) + 7 (boxer) + 7 (e_vuong) + 7 (e_vuong_v2) |
 | Background removal, glaive set | `fal-ai/birefnet/v2` | 56 images (8 per action, per-frame mode) |
 | Background removal, skull warrior set | `fal-ai/birefnet/v2` | 7 images (1 per action, sheet mode) |
+| Background removal, boxer set | `fal-ai/birefnet/v2` | 7 images (1 per action, sheet mode, experimental) |
+| Background removal, e_vuong and e_vuong_v2 sets | `fal-ai/birefnet/v2` | 0 (VFX sets, `background_remove_option: none`) |
 | Local extraction, trimming, atlas packing | Python/OpenCV | 0 billable |
 | Local rembg comparison test | `isnet-anime` via rembg | 0 billable |
 
-The glaive set used per-frame background removal (`--background-mode frames`). The skull warrior set used the new `sheet` default, covering the same 56 frames in **7 requests instead of 56**, at the resolution trade-off described in [option 2](./option-2-video-frames.md#background-removal-call-count).
+The glaive set used per-frame background removal (`--background-mode frames`). The skull warrior and boxer sets used the new `sheet` default, covering the same 56 frames in **7 requests instead of 56**, at the resolution trade-off described in [option 2](./option-2-video-frames.md#background-removal-call-count).
 
 No retries were run, so one clip per action is the only video spend. A production set typically needs additional attempts per action, so multiply by the accepted-attempt rate you observe in practice.
 

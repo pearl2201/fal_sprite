@@ -153,6 +153,74 @@ Review the [set overview](../output/option2_animation_set_skull_warrior/animatio
 
 This is the clearest evidence so far that prompt constraints alone do not stop the model from inventing speed effects or deforming rigid props. Two practical levers, in order of cost: regenerate only the failing actions, or curate frames per action instead of accepting a fixed count. The cleaver-and-shield loadout is harder than the single polearm because two rigid objects must stay coherent through fast motion.
 
+### Third character run: unarmed boxer with permitted VFX
+
+The third run ([art_references/5.kien_nguyen.png](../art_references/5.kien_nguyen.png)) inverted the earlier constraint: the character has **no weapon at all** — two red boxing gloves — and the user explicitly asked for **strong VFX, particle effects, and splash trails**. Prompts live in [prompt/animation_set_kien_boxer](../prompt/animation_set_kien_boxer) and are driven by [manifests/kien_boxer.json](../manifests/kien_boxer.json).
+
+The attack prompts were adapted to boxing rather than reusing a weapon template: normal attack is a jab–cross–hook combination and skill attack is a coiled uppercut into a spinning backfist. Weapon-continuity rules were replaced with glove-continuity rules ("exactly one glove per hand, always attached to an arm, never duplicated"), because the previous characters' failure mode was duplicated or deforming weapons.
+
+Run shape: 7 H3 generations, `--horizontal-padding 0.35 --vertical-padding 0.25`, source 1312 × 1199 padded to 2230 × 1799, clips returned at 960 × 768 / 24 fps / 124 frames, 8 frames per action.
+
+Background removal was run once for evaluation (7 sheet-mode requests), but a VFX set does not require it: the effects are the animation, so the set is reviewed and delivered from the raw frames. The manifest now uses `"background_remove_option": "none"`, so future reruns make **zero** background calls. The review GIF is built from raw frames with `--prefer frames`, and the earlier cutout variant is kept as `animation_set_alpha.gif` for comparison.
+
+**Design lesson — VFX colour must contrast with the background.** The first draft of these prompts asked for white impact flashes, white speed streaks, and luminous white motion trails. That is the wrong choice twice over: white effects are nearly invisible on the pure-white generation background, and background removal then deletes them along with the background. The prompts were rewritten around a **saturated gold / crimson / black-ink** palette, and every effect survived BiRefNet segmentation. With that change, sheet-mode removal preserved the shockwave rings, ink splatter, dust, and motion trails in `spritesheet_alpha.png`.
+
+| Action | Usable frames | Observed defects |
+|---|---:|---|
+| Idle | 8/8 | Clean loop; faint haze and dust motes only. |
+| Walk | 8/8 | Dust puffs read well; scale stays consistent. |
+| Run | 8/8 | Crimson speed streaks and dust; strongest locomotion clip so far. |
+| Normal Attack | 8/8 | Jab, cross, and hook read clearly with gold flash, red rings, and black ink spatter. |
+| Skill Attack | 4/8 | Frames 01–04 let the shockwave column swallow the torso, leaving the character unreadable; 05–07 show the backfist clearly. |
+| Hurt | 5/8 | Frames 01–03 load so much black ink splatter that it covers the face and head. |
+| Death | 8/8 | Clean knockdown and readable resting pose. |
+
+Per-frame bounding-box cropping in the overview exaggerates apparent size changes, because VFX widen the box. The raw `contact_sheet.jpg` for each action is the accurate check for character scale.
+
+This run shows the trade-off the earlier runs could not test: **permitting VFX fixes the model's unwanted smear problem on attacks — the effects are now intentional and styled — but heavy effects can occlude the character**. The fix is effect intensity, not suppression: keep the burst adjacent to the fist and let it clear before the next pose.
+
+Because the effects are the animation, a VFX set should not require background removal. Keep `background_remove_option` at `none`, deliver `frames/` and `spritesheet.png`, and build the review GIF with `--prefer frames`.
+
+### Fourth character run: grey-wasteland comedy character
+
+[art_references/6_e_vuong.png](../art_references/6_e_vuong.png) is a comedic character whose attacks are a single booger throw and a single toxic-gas release. Prompts are in [prompt/animation_set_e_vuong](../prompt/animation_set_e_vuong), driven by [manifests/e_vuong.json](../manifests/e_vuong.json). The requested effects were "filthy wasteland" grey tones, so every VFX instruction names mid-grey, slate-grey, and sickly olive-grey explicitly — pale grey would have vanished on the white background.
+
+Run shape: 7 H3 generations at `--horizontal-padding 0.5 --vertical-padding 0.5` (source 1312 × 1199 → 2624 × 2399 padded), clips returned at 832 × 768 / 24 fps / 124 frames, `background_remove_option: none` so background removal cost **0 requests**. Total: 7 video calls, 0 background calls.
+
+Each prompt constrains the action to **one** execution: the normal attack throws exactly one projectile, and the skill releases exactly one gas burst, with no repeats inside the clip.
+
+| Action | Frames | Notes |
+|---|---:|---|
+| Idle | 8 | Slow sway with grey haze at the ankles. |
+| Walk | 8 | Waddling stride with grey dust puffs. |
+| Run | 8 | Grey dust clouds, grit spray, slate speed streaks. |
+| Normal Attack | 12 | Nose dig, glob loaded, one green projectile in flight with a splash trail, recovery. |
+| Skill Attack | 8 | Turns away, bends over, single olive-green gas cloud with curling tendrils. |
+| Hurt | 8 | Grey impact burst and dust, glasses knocked crooked. |
+| Death | 8 | Backward flop into a dust cloud. |
+
+**Framing trade-off with heavy padding.** At `0.5` on both axes the model frames the entire padded canvas, so the character occupies only about **15% of each 832 × 768 frame** (measured subject bounding box 265 × 367 px). The padding does prevent VFX clipping — the gas cloud and projectile both stay inside the frame — but it wastes a large amount of resolution. `diverse` sampling also returned only 5 frames for the normal attack and missed the airborne projectile, so it was re-sampled with `--selection uniform --frame-count 12`, which captures the whole beat. Re-sampling is free; no clip was regenerated.
+
+### Fifth run: v2 reference with more VFX room
+
+Re-ran the same seven actions from [art_references/7_e_vuong_v2.png](../art_references/7_e_vuong_v2.png), a redesigned version of the character: off-white cat-mascot t-shirt, black cargo shorts with a bear keychain, sneakers and socks, smartwatch. Fidelity lines were rewritten for the new outfit; prompts live in [prompt/animation_set_e_vuong_v2](../prompt/animation_set_e_vuong_v2) and the run is driven by [manifests/e_vuong_v2.json](../manifests/e_vuong_v2.json).
+
+Padding was raised to `0.8` horizontal and `0.6` vertical (area ×5.6 versus ×4.0) specifically to give the projectile and gas cloud more empty space. Measured effect on the returned 992 × 768 frames: free margin grew to **36% left / 38% right**, with the subject still 43% of frame height.
+
+| Action | Frames | Notes |
+|---|---:|---|
+| Idle | 8 | Grey haze at the ankles, wide framing. |
+| Walk | 8 | Compact grey dust puffs at each foot plant. |
+| Run | 8 | Dust clouds, grit spray, slate speed streaks. |
+| Normal Attack | 12 | The green glob now travels across a wide empty lane with a long splash trail before leaving frame. |
+| Skill Attack | 8 | Large olive-grey cloud billows out and stays fully inside frame. |
+| Hurt | 8 | Grey impact burst and dust. |
+| Death | 8 | Backward flop into a dust cloud. |
+
+Extra padding achieved the goal: neither the projectile nor the gas cloud touches a frame edge. Outputs are under `output/option2_animation_set_e_vuong_v2/`.
+
+**Bug fixed during this run:** `_normalized_subject` loaded full-resolution images into numpy before downscaling, which raised `MemoryError` on a machine with ~4 GB free while comparing the reference. It now thumbnails to `working_size` (512 px) before array work, so similarity scoring is bounded regardless of reference or frame size. The walk clip had already downloaded, so the resumed run reused it instead of paying for another generation.
+
 ## Cost estimate
 
 For the shared one-character pilot assumptions and cost formula, see [cost estimate](./cost-estimate.md). This option's variable is primarily the number and length of H3 Max Turbo clip generations; record the actual FAL quote/rate before running retries. Optional frame inpainting is not included in this extraction-only option.

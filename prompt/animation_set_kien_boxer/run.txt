@@ -1,0 +1,9 @@
+Create one continuous run-in-place animation for this boxer, facing right.
+
+The boxer sprints forward on the spot with powerful driving strides, torso leaning into the run, arms pumping while both red boxing gloves stay clenched in guard. The feet cycle in place rather than travelling across the screen. Keep the character centred at constant scale. Add energetic dust kicked up behind the feet, horizontal crimson speed streaks trailing the body, and a few sweat droplets flying off the shoulders. Finish close to the original stance.
+
+CHARACTER FIDELITY: preserve the original design exactly — muscular shirtless build, tan skin, dark spiky undercut hair, chin beard, confident face, white towel streaming from the neck, glossy red boxing gloves with black and white cuffs, black shorts with red and white ornament, red sash belt with tails, white ankle wraps, black sandals, thick ink outlines. Exactly one glove per hand, always attached to an arm, never duplicated.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. Whole body, both gloves, towel, and feet stay inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing.
+
+No punching or attacking; locomotion only. Moderate effects: dust clouds, speed streaks, sweat spray. No fire, no explosions, no energy blasts. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

@@ -1,0 +1,11 @@
+Create one seamless looping idle animation for this character.
+
+The character stands in a lazy, slouching idle facing right: knees bent, belly forward, shoulders loose, a smug toothy grin. He sways his weight side to side with a small rhythmic bounce, scratches his belly once, and lets his head bob slightly. The action is one continuous idle loop that returns exactly to the starting pose so it loops seamlessly.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, big confident grin, plain black short-sleeve t-shirt with one small brown poop emoji printed on the chest, dark grey board shorts covered in small brown poop emoji and beige pug patterns with a white drawstring, black slide sandals with a small brown poop motif, pale tan skin, thick black ink outlines. Keep the body proportions and cartoon style identical.
+
+ATMOSPHERE: a faint murky grey haze drifts slowly around his ankles and a few slow grey dust motes float upward. Keep this atmosphere subtle and mid-grey so it reads clearly against the white background. Do not let the haze cover the character.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body, hair, glasses, and feet stay inside the frame with generous margins. No camera movement, zoom, pan, rotation, or reframing.
+
+No attacking, walking, running, jumping, turning around, or bending over. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

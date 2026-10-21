@@ -165,7 +165,7 @@ Without `--yes` the batch prints the plan and exits with code `2`. Existing clip
 ## Defaults and guardrails
 
 1. **The reference is always padded before generation.** `generate` rejects zero padding. Without margins the model clips weapons and limbs; the unpadded first pilot cut off the glaive.
-2. **Background removal runs on the packed spritesheet, not per frame.** One BiRefNet request per action instead of one per frame — 7 instead of 56 for a seven-action set. Pass `--background-mode frames` when final-art edge fidelity matters more than cost.
+2. **Background removal runs on the packed spritesheet, not per frame — and is skipped entirely when VFX are allowed.** One BiRefNet request per action instead of one per frame — 7 instead of 56 for a seven-action set. Sets whose prompts permit VFX, particles, or splash trails use `"background_remove_option": "none"`, because the effects are part of the animation and segmentation can soften particle edges. Pass `--background-mode frames` when final-art edge fidelity matters more than cost.
 3. **Clipped endpoints are only trimmed when they match the reference.** The first and last video frames are compared with the reference (default threshold `0.95`); scores and decisions are recorded in `metadata.json`.
 
 ### Background removal modes
@@ -174,8 +174,15 @@ Without `--yes` the batch prints the plan and exits with code `2`. Existing clip
 |---|---:|---|
 | `sheet` (default) | 1 | Atlas is downscaled to BiRefNet's operating resolution, so edges are softer |
 | `frames` | 1 per sampled frame | Full per-character resolution |
+| `none` | 0 | Keep the raw frames; required when the animation itself includes VFX, particles, or splash trails |
 
 Measured on one clip: sheet mode scored `0.9417` mean IoU against per-frame mode and raised the partial-alpha share from `2.3%` to `5.5%`.
+
+Build the review GIF from whichever layer the set actually uses. `build_animation_gif.py` defaults to alpha frames when present; for a VFX set, build from the raw frames so the effects stay intact:
+
+```powershell
+python scripts\build_animation_gif.py --root output\option2_animation_set_kien_boxer --prefer frames
+```
 
 ## Output layout
 
@@ -212,7 +219,8 @@ See [document/cost-estimate.md](document/cost-estimate.md) for per-option estima
 
 ## Known limitations
 
-- Fast motion can make the video model invent smear arcs even when the prompt forbids effects, and can deform rigid props such as shields and blades. Both were observed on real runs.
+- Fast motion can make the video model invent smear arcs even when the prompt forbids effects, and can deform rigid props such as shields and blades. Both were observed on real runs. Allowing deliberate VFX replaces the unwanted smears with styled effects, but over-scale effects can then hide the character.
+- VFX must contrast with the white background. White or pale effects are nearly invisible on the canvas and are removed by background removal; use saturated gold, crimson, or black-ink effects.
 - Low-motion actions (`idle`, `walk`, `hurt`) yield few visually distinct frames; using `selection: uniform` keeps the requested frame count, at the cost of subtle differences between frames.
 - Frame timing in the GIF is uniform playback, not true clip timing. Source timestamps are preserved in metadata if you need accurate timing.
 - Background removal quality depends on the source brushwork; inspect thin shapes such as horns, tassels, and blade edges at full size.

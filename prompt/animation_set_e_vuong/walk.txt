@@ -1,0 +1,11 @@
+Create one continuous walk-in-place animation for this character, facing right.
+
+The character walks with a heavy, waddling gait: short stomping steps, belly leading, arms swinging low, head bobbing, sandals slapping the ground. The feet cycle in place rather than travelling across the screen. One continuous walk loop that returns to the starting pose.
+
+CHARACTER FIDELITY: preserve the original design exactly — chubby young boy, short spiky black hair, thick rectangular black glasses, smug grin, black short-sleeve t-shirt with one small brown poop emoji on the chest, dark grey board shorts with small brown poop emoji and beige pug patterns and a white drawstring, black slide sandals with a brown poop motif, pale tan skin, thick black ink outlines. Keep proportions and cartoon style identical.
+
+EFFECTS: each foot plant kicks up a small puff of mid-grey dust and grey grit particles, and a thin trail of grey dust drifts behind the rear foot. Keep effects mid-grey so they read on the white background.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body, hair, glasses, and feet stay inside the frame with generous margins. No camera movement, zoom, pan, rotation, or reframing.
+
+No punching, no throwing, no bending over, no gas cloud in this action; locomotion only. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

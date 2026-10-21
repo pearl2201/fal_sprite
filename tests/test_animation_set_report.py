@@ -5,7 +5,12 @@ from pathlib import Path
 
 from PIL import Image
 
-from scripts.animation_set_report import build_overview, resolve_order, write_index
+from scripts.animation_set_report import (
+    build_overview,
+    resolve_order,
+    subtitle_from_frames,
+    write_index,
+)
 
 
 def _make_set(root: Path, names, frames: int = 2, with_alpha: bool = True) -> None:
@@ -41,6 +46,32 @@ class AnimationSetReportTests(unittest.TestCase):
             self.assertEqual(
                 resolve_order(root, ["idle", "death"]),
                 ["idle", "death", "extra_dash"],
+            )
+
+    def test_subtitle_reports_real_frame_count_and_layer(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            _make_set(root, ["idle", "death"], frames=4)
+            self.assertEqual(
+                subtitle_from_frames(root, ["idle", "death"]),
+                "4 frames per action; alpha cutouts",
+            )
+
+            raw_only = Path(temporary_directory) / "raw"
+            _make_set(raw_only, ["idle"], frames=6, with_alpha=False)
+            self.assertEqual(
+                subtitle_from_frames(raw_only, ["idle"]),
+                "6 frames per action; raw RGB frames",
+            )
+
+    def test_subtitle_handles_mixed_counts(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            _make_set(root, ["idle"], frames=2)
+            _make_set(root, ["death"], frames=5)
+            self.assertEqual(
+                subtitle_from_frames(root, ["idle", "death"]),
+                "2-5 frames per action; alpha cutouts",
             )
 
     def test_overview_is_written_with_one_row_per_action(self):

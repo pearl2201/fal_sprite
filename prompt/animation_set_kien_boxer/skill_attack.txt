@@ -1,0 +1,11 @@
+Create one spectacular signature boxing skill attack, then return to the original guard stance. One attack only, no loop.
+
+The boxer faces right, winds up with a deep crouch and full-body coil, then unleashes a devastating rising uppercut followed by a spinning backfist. Maximum cinematic spectacle is wanted: a large vertical crimson-and-gold shockwave column erupts around the boxer, a blazing gold impact core at the moment of the uppercut, expanding crimson radial rings, a wide fan of black-ink and gold splash streaks radiating outward, ground dust bursting up in a ring, and heat-haze distortion across the frame. Both gloves carry long gold motion trails during the swing. Everything peaks on the uppercut and fades as the boxer settles back into guard. Use saturated gold, crimson, orange, and black-ink colours so every effect stays clearly visible against the white background.
+
+CHARACTER FIDELITY: preserve the original design exactly — muscular shirtless build, tan skin, dark spiky undercut hair, chin beard, fierce laughing face, white towel snapping through the spin, glossy red boxing gloves with black and white cuffs, black shorts with red and white ornament, red sash belt with tails, white ankle wraps, black sandals, thick ink outlines. The gloves are the hands: exactly one glove per hand, always attached to an arm. Never draw extra gloves, floating gloves, or duplicated arms.
+
+EFFECTS ALLOWED AND ENCOURAGED: shockwave column, impact flash, radial shockwave rings, splash ink arcs, particle bursts, dust explosion, heat haze, motion trails. Effects orbit the boxer and radiate from the fists; they must never become a weapon or a separate creature.
+
+CAMERA: fixed orthographic side view, locked camera, constant framing and character scale. The whole body, both gloves, towel, and feet stay inside frame with generous margins, and the largest VFX ring still fits inside the image. No camera movement, zoom, pan, rotation, or reframing.
+
+No weapons, no blades, no shields, no glowing swords. No text, no environment, no additional objects. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

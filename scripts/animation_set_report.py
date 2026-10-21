@@ -35,6 +35,28 @@ def resolve_order(root: Path, order: list[str] | None) -> list[str]:
     return names
 
 
+def subtitle_from_frames(root: Path, names: list[str]) -> str:
+    """Describe the real frame counts and whether alpha cutouts are in use."""
+    counts = []
+    alpha_actions = 0
+    for name in names:
+        alpha_frames = list((root / name / "frames_alpha").glob("frame_*.png"))
+        if alpha_frames:
+            alpha_actions += 1
+        counts.append(len(alpha_frames) or len(list((root / name / "frames").glob("frame_*.png"))))
+    if not counts:
+        return ""
+    low, high = min(counts), max(counts)
+    frame_text = f"{low} frames per action" if low == high else f"{low}-{high} frames per action"
+    if alpha_actions == 0:
+        layer = "raw RGB frames"
+    elif alpha_actions == len(names):
+        layer = "alpha cutouts"
+    else:
+        layer = f"alpha cutouts in {alpha_actions}/{len(names)} actions"
+    return f"{frame_text}; {layer}"
+
+
 def build_overview(
     root: Path,
     order: list[str] | None = None,
@@ -67,7 +89,7 @@ def build_overview(
     )
     draw = ImageDraw.Draw(canvas)
     draw.text((10, 8), title or f"Animation set - {root.name}", fill="black")
-    draw.text((10, 26), "8 frames per action unless noted; alpha composited", fill="#555555")
+    draw.text((10, 26), subtitle_from_frames(root, names), fill="#555555")
 
     for row, name in enumerate(names):
         directory = root / name

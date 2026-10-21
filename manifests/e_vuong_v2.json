@@ -1,0 +1,29 @@
+[
+  {
+    "name": "e_vuong_v2",
+    "image_references": "art_references/7_e_vuong_v2.png",
+    "output_root": "output/option2_animation_set_e_vuong_v2",
+    "padding_width": 0.8,
+    "padding_height": 0.6,
+    "frame_count": 8,
+    "columns": 4,
+    "animations_prompt": {
+      "idle": {
+        "prompt": "prompt/animation_set_e_vuong_v2/idle.txt",
+        "selection": "uniform",
+        "keep_endpoints": true
+      },
+      "walk": { "prompt": "prompt/animation_set_e_vuong_v2/walk.txt", "selection": "uniform" },
+      "run": { "prompt": "prompt/animation_set_e_vuong_v2/run.txt", "selection": "uniform" },
+      "normal_attack": {
+        "prompt": "prompt/animation_set_e_vuong_v2/normal_attack.txt",
+        "selection": "uniform",
+        "frame_count": 12
+      },
+      "skill_attack": "prompt/animation_set_e_vuong_v2/skill_attack.txt",
+      "hurt": { "prompt": "prompt/animation_set_e_vuong_v2/hurt.txt", "selection": "uniform" },
+      "death": "prompt/animation_set_e_vuong_v2/death.txt"
+    },
+    "background_remove_option": "none"
+  }
+]
