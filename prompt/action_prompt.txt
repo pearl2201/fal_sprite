@@ -1,0 +1,14 @@
+Animate immediately: the character performs one fast, powerful polearm attack, then returns to the original idle pose. One attack only, no loop.
+
+**STRICT VISUAL CONSTRAINTS:**
+Character-only animation. The weapon is a single solid, physical 3D object held by the character. The weapon must remain visually singular and continuous in every frame.
+
+**ABSOLUTELY NO WEAPON EFFECTS:** no weapon trails, no slash arcs, no motion trails, no afterimages, no ghost weapons, no duplicated weapon silhouettes, no glowing streaks, no slash waves, no energy blades, no impact splashes, no particles, no sparks, no smoke, no magical effects, no added shapes around the weapon.
+
+Fast motion must be conveyed exclusively through the character's body pose and the physical movement of the weapon. Do not visualize motion using additional graphics or effects.
+
+**Camera:** fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, hair, feet, and weapon inside the frame at all times, with generous empty margins. No camera movement, zoom, pan, rotation, or reframing.
+
+**Consistency:** preserve the original character design, outfit, weapon geometry, colors, proportions, and white background. Keep the character facing right. One continuous action, followed by a stable recovery pose. Pure white background, no environment, no text, no additional objects.
+
+Output clean, isolated game-character animation frames suitable for spritesheet extraction.
