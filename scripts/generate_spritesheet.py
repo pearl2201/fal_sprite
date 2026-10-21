@@ -12,6 +12,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import cv2
+import numpy as np
 from PIL import Image, ImageDraw
 
 
@@ -95,13 +96,13 @@ def load_project_env(env_path: Path) -> None:
                 break
 
 
-def _download_video(video_url: str, destination: Path) -> None:
-    parsed = urlparse(video_url)
+def _download_asset(asset_url: str, destination: Path) -> None:
+    parsed = urlparse(asset_url)
     if parsed.scheme != "https" or not parsed.netloc:
-        raise ValueError("The model returned a video URL that is not HTTPS.")
+        raise ValueError("The model returned an asset URL that is not HTTPS.")
 
     request = urllib.request.Request(
-        video_url,
+        asset_url,
         headers={"User-Agent": "fal-sprite-option2/1.0"},
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -111,12 +112,12 @@ def _download_video(video_url: str, destination: Path) -> None:
         with urllib.request.urlopen(request, timeout=60) as response:
             content_length = response.headers.get("Content-Length")
             if content_length and int(content_length) > MAX_VIDEO_BYTES:
-                raise ValueError("The generated video exceeds the 300 MiB download limit.")
+                raise ValueError("The generated asset exceeds the 300 MiB download limit.")
             with destination.open("wb") as output:
                 while chunk := response.read(1024 * 1024):
                     written += len(chunk)
                     if written > MAX_VIDEO_BYTES:
-                        raise ValueError("The generated video exceeds the 300 MiB download limit.")
+                        raise ValueError("The generated asset exceeds the 300 MiB download limit.")
                     output.write(chunk)
         completed = True
     finally:
@@ -125,7 +126,7 @@ def _download_video(video_url: str, destination: Path) -> None:
 
     if written == 0:
         destination.unlink(missing_ok=True)
-        raise RuntimeError("The generated video download was empty.")
+        raise RuntimeError("The generated asset download was empty.")
 
 
 def generate_video(
@@ -182,7 +183,7 @@ def generate_video(
 
     destination = output_dir / "source_video.mp4"
     print(f"Downloading generated clip to {destination}...")
-    _download_video(video_url, destination)
+    _download_asset(video_url, destination)
     generation_metadata = {
         "endpoint": FAL_ENDPOINT,
         "original_reference": str(reference),
@@ -239,6 +240,111 @@ def _select_diverse_indices(
     return sorted(selected)
 
 
+def _normalized_subject(image_source: Path | Image.Image, size: int = 128) -> Image.Image:
+    if isinstance(image_source, Image.Image):
+        image = image_source.convert("RGBA")
+    else:
+        with Image.open(image_source) as source:
+            image = source.convert("RGBA")
+    rgba = np.asarray(image)
+    if "A" in image.getbands() and np.min(rgba[:, :, 3]) < 255:
+        mask = rgba[:, :, 3] > 8
+    else:
+        rgb = rgba[:, :, :3].astype(np.int16)
+        corners = np.stack((rgb[0, 0], rgb[0, -1], rgb[-1, 0], rgb[-1, -1]))
+        background = np.median(corners, axis=0)
+        mask = np.max(np.abs(rgb - background), axis=2) > 18
+
+    ys, xs = np.where(mask)
+    if len(xs):
+        image = image.crop((int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1))
+    else:
+        image = image.convert("RGB").convert("RGBA")
+
+    image.thumbnail((size - 16, size - 16), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (size, size), (255, 255, 255, 255))
+    canvas.alpha_composite(
+        image,
+        ((size - image.width) // 2, (size - image.height) // 2),
+    )
+    return canvas.convert("RGB")
+
+
+def _reference_endpoint_bounds(
+    first_frame: Image.Image,
+    last_frame: Image.Image,
+    frame_total: int,
+    reference_path: Path | None,
+    threshold: float,
+) -> tuple[int, int, dict[str, Any]]:
+    if not 0 <= threshold <= 1:
+        raise ValueError("reference similarity threshold must be between 0 and 1.")
+    comparison: dict[str, Any] = {
+        "reference_image": str(reference_path.resolve()) if reference_path else None,
+        "similarity_threshold": threshold,
+        "first_similarity": None,
+        "last_similarity": None,
+        "first_removed": False,
+        "last_removed": False,
+    }
+    if reference_path is None or frame_total < 1:
+        return 0, frame_total, comparison
+
+    first_similarity = _image_reference_similarity(first_frame, reference_path)
+    last_similarity = (
+        _image_reference_similarity(last_frame, reference_path)
+        if frame_total > 1
+        else first_similarity
+    )
+    comparison["first_similarity"] = round(first_similarity, 4)
+    comparison["last_similarity"] = round(last_similarity, 4)
+
+    start = 1 if frame_total > 1 and first_similarity >= threshold else 0
+    end = (
+        frame_total - 1
+        if frame_total - start > 1 and last_similarity >= threshold
+        else frame_total
+    )
+    comparison["first_removed"] = start > 0
+    comparison["last_removed"] = end < frame_total
+    return start, end, comparison
+
+
+def _image_reference_similarity(image: Image.Image, reference_path: Path) -> float:
+    reference = np.asarray(_normalized_subject(reference_path), dtype=np.int16)
+    candidate = np.asarray(_normalized_subject(image), dtype=np.int16)
+    difference = np.abs(reference - candidate).mean()
+    return float(1.0 - difference / 255.0)
+
+
+def _resolve_reference_image(
+    reference_image: Path | None,
+    source_dir: Path,
+) -> Path | None:
+    if reference_image is not None:
+        if not reference_image.is_file():
+            raise FileNotFoundError(f"Reference image not found: {reference_image}")
+        return reference_image
+
+    generation_path = source_dir / "generation.json"
+    if not generation_path.is_file():
+        return None
+    try:
+        generation = json.loads(generation_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise ValueError(f"Invalid generation metadata: {generation_path}") from error
+
+    uploaded_reference = generation.get("uploaded_reference")
+    original_reference = generation.get("original_reference")
+    for candidate in (
+        source_dir / uploaded_reference if uploaded_reference else None,
+        Path(original_reference) if original_reference else None,
+    ):
+        if candidate is not None and candidate.is_file():
+            return candidate
+    return None
+
+
 def remove_background_from_frames(
     frames_dir: Path,
     output_dir: Path,
@@ -287,7 +393,7 @@ def remove_background_from_frames(
             )
 
         destination = output_alpha_dir / frame_path.name
-        _download_video(result_url, destination)
+        _download_asset(result_url, destination)
         with Image.open(destination) as removed_background:
             rgba = removed_background.convert("RGBA")
             alpha = rgba.getchannel("A")
@@ -352,6 +458,8 @@ def process_video(
     frame_count: int = 8,
     columns: int = 4,
     selection: str = "diverse",
+    reference_image: Path | None = None,
+    reference_similarity_threshold: float = 0.95,
 ) -> list[dict[str, Any]]:
     """Sample a clip uniformly and produce frames, contact sheet, atlas, and metadata."""
     if not video_path.is_file():
@@ -362,7 +470,10 @@ def process_video(
         raise ValueError("columns must be at least 1.")
     if selection not in {"diverse", "uniform"}:
         raise ValueError("selection must be 'diverse' or 'uniform'.")
+    if not 0 <= reference_similarity_threshold <= 1:
+        raise ValueError("reference similarity threshold must be between 0 and 1.")
 
+    resolved_reference = _resolve_reference_image(reference_image, video_path.parent)
     capture = cv2.VideoCapture(str(video_path))
     if not capture.isOpened():
         raise RuntimeError(f"Could not open video: {video_path}")
@@ -374,18 +485,45 @@ def process_video(
         if width < 1 or height < 1:
             raise RuntimeError(f"Video has invalid dimensions: {video_path}")
 
+        if frame_total < 1:
+            raise RuntimeError(f"Video has no readable frames: {video_path}")
+        capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        success, first_bgr = capture.read()
+        if not success:
+            raise RuntimeError("Could not decode the video's first frame.")
+        capture.set(cv2.CAP_PROP_POS_FRAMES, frame_total - 1)
+        success, last_bgr = capture.read()
+        if not success:
+            raise RuntimeError("Could not decode the video's last frame.")
+        first_rgb = cv2.cvtColor(first_bgr, cv2.COLOR_BGR2RGB)
+        last_rgb = cv2.cvtColor(last_bgr, cv2.COLOR_BGR2RGB)
+        source_start, source_end, endpoint_comparison = _reference_endpoint_bounds(
+            Image.fromarray(first_rgb),
+            Image.fromarray(last_rgb),
+            frame_total,
+            resolved_reference,
+            reference_similarity_threshold,
+        )
+        candidate_count = source_end - source_start
+
         if selection == "diverse":
             thumbnails = []
-            for source_index in range(frame_total):
+            for source_index in range(source_start, source_end):
                 capture.set(cv2.CAP_PROP_POS_FRAMES, source_index)
                 success, frame = capture.read()
                 if not success:
                     raise RuntimeError(f"Could not decode source frame {source_index}.")
                 resized = cv2.resize(frame, (64, 64), interpolation=cv2.INTER_AREA)
                 thumbnails.append(cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY))
-            indices = _select_diverse_indices(thumbnails, frame_count)
+            indices = [
+                source_start + index
+                for index in _select_diverse_indices(thumbnails, frame_count)
+            ]
         else:
-            indices = _sample_indices(frame_total, frame_count)
+            indices = [
+                source_start + index
+                for index in _sample_indices(candidate_count, frame_count)
+            ]
         output_dir.mkdir(parents=True, exist_ok=True)
         frames_dir = output_dir / "frames"
         frames_dir.mkdir(parents=True, exist_ok=True)
@@ -413,6 +551,7 @@ def process_video(
     finally:
         capture.release()
 
+    columns = min(columns, len(tile_images))
     rows = (len(tile_images) + columns - 1) // columns
     sheet = Image.new("RGB", (width * columns, height * rows), "white")
     contact_tile_width = min(width, 320)
@@ -440,12 +579,13 @@ def process_video(
     sheet.save(output_dir / "spritesheet.png")
     contact_sheet.save(output_dir / "contact_sheet.jpg", quality=90)
     metadata = {
-        "source_video": video_path.name,
+        "source_video": str(video_path.resolve()),
         "video_fps": fps if fps > 0 else None,
         "source_frame_count": frame_total,
         "frame_size": {"width": width, "height": height},
         "sampled_frame_count": len(records),
         "selection": selection,
+        "reference_endpoint_comparison": endpoint_comparison,
         "layout": {"columns": columns, "rows": rows},
         "background": "Preserved from source video; no transparency/keying applied.",
         "frames": records,
@@ -465,8 +605,8 @@ def process_video(
 def _confirm_generation(remove_background: bool = False) -> bool:
     if not sys.stdin.isatty():
         print(
-            "Generation can incur FAL charges. Re-run with --yes only after reviewing "
-            "the endpoint's current price and terms.",
+            "FAL generation can incur charges. Re-run with --yes only after reviewing "
+            "the endpoint's current prices and terms.",
             file=sys.stderr,
         )
         return False
@@ -514,6 +654,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate_parser.add_argument("--frame-count", type=int, default=8)
     generate_parser.add_argument("--columns", type=int, default=4)
     generate_parser.add_argument("--selection", choices=("diverse", "uniform"), default="diverse")
+    generate_parser.add_argument("--reference-similarity-threshold", type=float, default=0.95)
     generate_parser.add_argument("--horizontal-padding", type=float, default=0.25)
     generate_parser.add_argument("--vertical-padding", type=float, default=0.10)
     generate_parser.add_argument(
@@ -524,7 +665,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate_parser.add_argument(
         "--yes",
         action="store_true",
-        help="Confirm paid generation and upload the reference to fal.ai.",
+        help="Confirm all potentially paid FAL requests in this command.",
     )
 
     process_parser = subparsers.add_parser("process", help="Process an existing local video without API calls.")
@@ -533,6 +674,8 @@ def build_parser() -> argparse.ArgumentParser:
     process_parser.add_argument("--frame-count", type=int, default=8)
     process_parser.add_argument("--columns", type=int, default=4)
     process_parser.add_argument("--selection", choices=("diverse", "uniform"), default="diverse")
+    process_parser.add_argument("--reference-image", type=Path)
+    process_parser.add_argument("--reference-similarity-threshold", type=float, default=0.95)
     process_parser.add_argument(
         "--remove-background",
         action="store_true",
@@ -543,6 +686,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Confirm paid background-removal requests.",
     )
+
+    prepare_parser = subparsers.add_parser(
+        "prepare",
+        help="Create a padded reference preview without calling any API.",
+    )
+    prepare_parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE)
+    prepare_parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT / "padded_reference.png",
+    )
+    prepare_parser.add_argument("--horizontal-padding", type=float, default=0.25)
+    prepare_parser.add_argument("--vertical-padding", type=float, default=0.10)
     return parser
 
 
@@ -566,14 +722,61 @@ def main() -> int:
                 args.frame_count,
                 args.columns,
                 args.selection,
+                reference_image=args.reference,
+                reference_similarity_threshold=args.reference_similarity_threshold,
             )
             if args.remove_background:
                 remove_background_from_frames(args.output_dir / "frames", args.output_dir)
-        else:
+        elif args.command == "process":
             if args.remove_background and not args.yes and not _confirm_background_removal():
                 print("Cancelled; no images were uploaded and no background removal was submitted.")
                 return 2
             records = process_video(
                 args.video,
                 args.output_dir,
-       
+                args.frame_count,
+                args.columns,
+                args.selection,
+                reference_image=args.reference_image,
+                reference_similarity_threshold=args.reference_similarity_threshold,
+            )
+            if args.remove_background:
+                remove_background_from_frames(args.output_dir / "frames", args.output_dir)
+        else:
+            metadata = prepare_padded_reference(
+                args.reference,
+                args.output,
+                args.horizontal_padding,
+                args.vertical_padding,
+            )
+            print(
+                f"Created {args.output.resolve()} "
+                f"({metadata['padded_size']['width']}x{metadata['padded_size']['height']})"
+            )
+            print("No API was called.")
+            return 0
+    except (FileNotFoundError, ValueError, RuntimeError) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Processed {len(records)} frames.")
+    print(f"Output: {args.output_dir.resolve()}")
+    metadata_path = args.output_dir / "metadata.json"
+    if metadata_path.is_file():
+        endpoint_comparison = json.loads(
+            metadata_path.read_text(encoding="utf-8")
+        ).get("reference_endpoint_comparison", {})
+        if endpoint_comparison.get("reference_image"):
+            print(
+                "Reference endpoint comparison: "
+                f"first={endpoint_comparison['first_similarity']}, "
+                f"last={endpoint_comparison['last_similarity']}, "
+                f"removed first={endpoint_comparison['first_removed']}, "
+                f"last={endpoint_comparison['last_removed']}."
+            )
+    print("Files: frames\\, spritesheet.png, contact_sheet.jpg, metadata.json")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
