@@ -197,6 +197,19 @@ python scripts\generate_spritesheet.py generate --yes
 
 `prepare` previews the padded input locally without a network request. `generate` pads the source image, uploads the padded reference to fal.ai, and can incur a charge; `--yes` is the explicit confirmation. Defaults add 25% of the reference width to each side and 10% of its height to the top and bottom. Override them with `--horizontal-padding 0.35 --vertical-padding 0.15` (fractions per edge, from 0 to 1). Padding creates room but cannot force the video model to preserve framing. The script reads `FAL_KEY`, `FAL_API`, or `FAL_API_KEY` from the process environment or project `.env` without printing it. Review live endpoint pricing/schema before running. Default output includes `padded_reference.png`, `generation.json`, `source_video.mp4`, sampled PNGs under `frames\`, `spritesheet.png`, `contact_sheet.jpg`, and `metadata.json`. The video background is preserved by default.
 
+### Batch runs from a manifest
+
+[run_batch.py](../scripts/run_batch.py) runs the whole flow for one or more characters described in JSON, so a set can be reproduced from one file instead of seven commands:
+
+```powershell
+python scripts\run_batch.py manifests\characters.example.json --dry-run
+python scripts\run_batch.py manifests\characters.example.json --yes
+```
+
+Each entry supplies the reference image, padding, animation-to-prompt mapping, and `background_remove_option` (`spritesheet`, `frames`, or `none`). Relative paths resolve against the project root, and the key order of `animations_prompt` becomes the GIF and overview order. Re-running is cheap: a clip whose `source_video.mp4` already exists is reused unless `--force` is passed, so a failed action can be retried without re-paying for finished ones. `--dry-run` reports the exact number of video generations and background requests, `--only NAME` narrows the run, and `--skip-background` or `--skip-report` isolate stages. A `<manifest>.report.json` is written after each run.
+
+The manifest schema, all field defaults, and the CLI options are documented in the [README](../README.md#batch-manifest), and [.github/skills/fal-spritesheet-pipeline/SKILL.md](../.github/skills/fal-spritesheet-pipeline/SKILL.md) captures the operating procedure for agents. [animation_set_report.py](../scripts/animation_set_report.py) builds the overview and index for an existing set without any API call.
+
 ### Background removal call count
 
 `--remove-background` runs only after `spritesheet.png` exists, and `--background-mode` decides how many paid BiRefNet requests that costs:
