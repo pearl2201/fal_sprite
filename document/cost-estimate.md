@@ -38,6 +38,25 @@ Optional BiRefNet v2 background removal also has an account/model-specific cost 
 - Unity 2D Animation and Spine license costs are omitted from the table. Unity should be tested first per the requested preference; include the appropriate Spine license cost only if the fallback is selected.
 - Each estimate excludes human labor. Option 3 and option 4 can have low API charges while requiring substantial manual modeling/rigging and art preparation, so compare labor separately before choosing.
 
+## Observed usage for the Option 4 Unity pilot
+
+The first Option 4 pilot (2026-10-22) used the glaive reference and Unity 6000.0.59f2:
+
+| Item | Endpoint | Units |
+|---|---|---:|
+| Motion-reference clip | `minimax/h3-max-turbo/image-to-video` | 1 clip (5 s, 768P, prompt expansion disabled) |
+| Cutout segmentation probe 1 | `fal-ai/evf-sam` | 4 requests (weapon, head, torso, arm) |
+| Cutout segmentation probe 2 | `fal-ai/evf-sam` | 4 requests (hand, leg, boot, skirt; hand/leg/skirt unusable) |
+| Cutout segmentation probe 3 | `fal-ai/evf-sam` | 4 requests (pants, upper leg, lower leg, foot) |
+| Crop re-segmentation | `fal-ai/evf-sam` | 6 requests (arm, hand, skirt, torso, leg front, leg back); all unusable |
+| Seedream layerize, auto | `bytedance/seedream/v5/flash/layerize` | 1 request (3 layers: base, body, weapon) |
+| Seedream layerize, prompted | `bytedance/seedream/v5/flash/layerize` | 1 request (15 layers: base + 14 named body parts and weapon) |
+| Hidden-part inpainting | `fal-ai/flux-pro/v1/fill` | 0 requests (local mask repair was enough) |
+
+At the quoted rates that is about **$0.30 (H3) + $0.09 (18 EVF-SAM requests)** = **$0.39**, plus **2 Seedream layerize requests** whose rate was not verifiable from the public page. The first H3 clip again contained model-invented streaks, so it was used only for motion timing; no video pixels were used as final art.
+
+Fourteen of eighteen EVF-SAM masks were usable after local cleanup. The `hand`, `leg`, and `skirt` prompts failed on the full image, and the six crop-based requests were worse: `hand` was empty and the arm/skirt masks were slivers. Prompt wording and crops do not fix overlapping parts.
+
 ## Observed usage for the full animation set pilot
 
 The seven-action pilot recorded billable units rather than USD, because H3 and BiRefNet rates were not verifiable at run time. Reconstruct the spend from the FAL account dashboard using these counts:

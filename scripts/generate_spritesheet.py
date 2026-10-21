@@ -135,8 +135,22 @@ def generate_video(
     output_dir: Path,
     horizontal_padding: float = 0.25,
     vertical_padding: float = 0.10,
+    duration: float = 5.0,
+    resolution: str = "768P",
+    seed: int | None = 424242,
+    prompt_expansion_mode: str = "disabled",
 ) -> Path:
     """Upload a padded reference and submit one paid H3 Max Turbo generation."""
+    if not 0.92 <= duration <= 15:
+        raise ValueError("duration must be between 0.92 and 15 seconds.")
+    if resolution not in ("480P", "768P", "1080P"):
+        raise ValueError("resolution must be one of: 480P, 768P, 1080P.")
+    if prompt_expansion_mode not in ("disabled", "balanced", "quality"):
+        raise ValueError(
+            "prompt_expansion_mode must be one of: disabled, balanced, quality."
+        )
+    if seed is not None and seed < 0:
+        raise ValueError("seed must be a non-negative integer or None.")
     if horizontal_padding <= 0 or vertical_padding <= 0:
         raise ValueError(
             "The reference must be padded before generation so the weapon, hair, and "
@@ -173,10 +187,16 @@ def generate_video(
     if not isinstance(image_url, str) or not image_url.startswith("https://"):
         raise RuntimeError("fal.ai did not return a valid HTTPS image URL.")
 
-    print(f"Submitting one generation to {FAL_ENDPOINT}...")
+    parameters: dict[str, Any] = {
+        "duration": duration,
+        "resolution": resolution,
+        "prompt_expansion_mode": prompt_expansion_mode,
+        "seed": seed,
+    }
+    print(f"Submitting one generation to {FAL_ENDPOINT} ({parameters})...")
     result: Any = fal_client.subscribe(
         FAL_ENDPOINT,
-        arguments={"image_url": image_url, "prompt": prompt},
+        arguments={"image_url": image_url, "prompt": prompt, **parameters},
         with_logs=True,
     )
     video_data = result.get("video") if isinstance(result, dict) else None
@@ -195,6 +215,7 @@ def generate_video(
         "original_reference": str(reference),
         "uploaded_reference": padded_reference.name,
         "padding": padding_metadata,
+        "parameters": parameters,
     }
     (output_dir / "generation.json").write_text(
         json.dumps(generation_metadata, indent=2),
@@ -824,6 +845,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     generate_parser.add_argument("--horizontal-padding", type=float, default=0.25)
     generate_parser.add_argument("--vertical-padding", type=float, default=0.10)
+    generate_parser.add_argument("--duration", type=float, default=5.0)
+    generate_parser.add_argument(
+        "--resolution", choices=("480P", "768P", "1080P"), default="768P"
+    )
+    generate_parser.add_argument("--seed", type=int, default=424242)
+    generate_parser.add_argument(
+        "--prompt-expansion-mode",
+        choices=("disabled", "balanced", "quality"),
+        default="disabled",
+        help="Disable prompt rewriting so the no-effects and locked-camera constraints survive.",
+    )
     generate_parser.add_argument(
         "--remove-background",
         action="store_true",
@@ -907,6 +939,10 @@ def main() -> int:
                 args.output_dir,
                 args.horizontal_padding,
                 args.vertical_padding,
+                duration=args.duration,
+                resolution=args.resolution,
+                seed=args.seed,
+                prompt_expansion_mode=args.prompt_expansion_mode,
             )
             records = process_video(
                 video_path,

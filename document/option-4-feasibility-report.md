@@ -1,16 +1,15 @@
 # Option 4 — Feasibility and Requirement Verification
 
-Verification date: 2026-10-22. Scope: research/report only; no pipeline code, Unity project, or paid FAL call was created.
+Verification date: 2026-10-22. Scope: research, implementation, and Unity pilot; paid calls were explicitly authorized.
 
 ## Verdict
 
-Option 4 is **feasible in principle but not implementation-ready**. Three requirements are currently unmet:
+Option 4 is **not production-ready**. It is technically explorable and produces a convincing prototype, but two production requirements are unmet:
 
-1. **Automated part segmentation is unproven for this art style.** A text-prompted segmentation endpoint exists (`fal-ai/evf-sam`), but it has not been tested on the approved anime-style references and cannot recover pixels hidden behind overlapping parts.
-2. **Unity automation is unverified.** The Unity MCP server is not running in this environment, and no Unity project exists in the repository. The rig/build steps would currently be manual.
-3. **H3 request schema has drifted.** `prompt_expansion_mode` is now a required field, but `scripts/generate_spritesheet.py` sends only `image_url` and `prompt`.
+1. **Segmentation is not pixel-faithful or reliably separated.** EVF-SAM fails on overlapping limbs. Seedream `layerize` produces clean named parts, but it regeneratively redraws them, re-compositing is not identical to the source, and the model's z-order puts the weapon behind the torso. Manual cleanup and manual z-order are required.
+2. **Automated rigging is not available at production quality.** Unity MCP can create sprites, objects, and scenes, but no reliable automated bone/weight authoring or video-to-pose retargeting was found. The current Unity results are hand-built: a 5-sprite rigid cutout with hand-authored keys and a static 14-layer assembly.
 
-Everything else (Unity 2D Animation availability, inpaint endpoints, existing pose-sampling pipeline) checks out.
+Everything else (Unity 2D Animation availability, inpaint endpoints, H3 parameterization, layer import) checks out. The option should be clearly labeled **prototype only** until manual layered art and manual rigging are accepted as part of the workflow.
 
 ## Verified facts
 
@@ -80,11 +79,15 @@ Pricing could not be verified: `fal.ai` model pages are behind a consent wall an
 4. Test one FLUX Fill extension on a real joint gap with a hand-authored mask; compare style and seam at the intended overlap.
 5. Only then run the Unity cutout prototype. Use the existing Option 2 clip's key poses for timing rather than paying for a new clip if motion reference is not the question under test.
 
-## Decisions still required
+## Resolved decisions and pilot outcome
 
-1. **Canonical art:** use the existing approved reference as the cutout master (recommended), or require a generated canonical image first? The Z-Image LoRA endpoint cannot do image-to-image.
-2. **Segmentation cleanup:** is manual mask editing acceptable? If not, automated segmentation will not meet production quality.
-3. **Unity automation path:** start and validate the MCP bridge, or accept manual rigging / an editor batch script for the pilot?
-4. **Export target:** Unity Animation clips, sprite atlas, or rendered frame sequence? Frame rate and pixels-per-unit are needed for acceptance.
-5. **Paid budget:** approve the actual call counts (1 H3 clip + 10-14 segmentation requests + 6-10 inpaint requests) or restrict the pilot to free reuse of existing Option 2 assets.
-6. **Pass thresholds:** define numeric limits for usable poses, bounding-box drift, joint gaps, weapon-grip failures, and human minutes per animation.
+The decisions above were resolved on 2026-10-22 and a first pilot was executed:
+
+- Canonical art: existing reference in `art_references/`, not a generated image.
+- Segmentation: automated EVF-SAM with manual masks accepted as fallback.
+- Unity: `templates/FalSprite`, Unity 6000.0.59f2, MCP verified live.
+- Export: Unity AnimationClip.
+- Paid calls: approved. The pilot used 1 H3 generation ($0.30) and 18 EVF-SAM requests ($0.09); no FLUX Fill call was needed.
+
+Outcome: EVF-SAM produced usable masks for the major masses (`weapon`, `head`, `torso`) and legs, but the `arm` mask was 87% torso, `hand` was empty, and `skirt` returned the whole character. Six crop-based retries were worse. **Seedream layerize is the validated replacement**: one auto request returned base/body/weapon, and one prompted request returned 15 layers (base + 14 named body parts and weapon). The model z-index puts the weapon behind the torso; the corrected order is saved in `full_canvas/parts.json`. Layers are regeneratively redrawn, so re-compositing is close but not pixel-identical — use the original reference as the canonical image and the layers as rig parts. Full-canvas sprites are under `output/option4/pilot/layerize_glaive_parts/full_canvas/`. See [Option 4 pilot result](./option-4-lora-video-inpaint-unity.md#pilot-result-2026-10-22).
+

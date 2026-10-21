@@ -77,8 +77,74 @@ python scripts\animation_set_report.py --root output\option2_animation_set_skull
 | `run_batch.py` | per manifest | Full pipeline for one or more characters |
 | `build_animation_gif.py` | none | Combine all actions into one ordered GIF |
 | `animation_set_report.py` | none | Build the overview image and JSON index |
+| `cutout_parts.py segment` | one EVF-SAM request per part | Segment a reference into cutout parts and RGBA sprites |
+| `cutout_parts.py layerize` | one Seedream request | Decompose a reference into named, bbox-aligned layers |
+| `cutout_parts.py inpaint` | one FLUX Fill request | Extend one hidden cutout region using a hand-authored mask |
 
 Run any command with `--help` for its full option list.
+
+### H3 generation parameters
+
+`generate` now sends explicit H3 parameters instead of relying on endpoint defaults:
+
+```powershell
+python scripts\generate_spritesheet.py generate `
+  --reference "art_references\2.Low-Poly Warrior with Ornate Glaive.png" `
+  --prompt "prompt\animation_set\normal_attack.txt" `
+  --output-dir "output\option4\pilot\attack" `
+  --duration 5 --resolution 768P --seed 424242 --prompt-expansion-mode disabled `
+  --horizontal-padding 0.25 --vertical-padding 0.25 --yes
+```
+
+`--prompt-expansion-mode disabled` keeps the no-effects and locked-camera constraints from being rewritten. The values are recorded in `generation.json` under `parameters`.
+
+### Option 4 cutout parts
+
+> **Option 4 status: prototype only — not production quality.** EVF-SAM cannot separate overlapping limbs, and Seedream `layerize` is generative rather than pixel-faithful; its z-order also needs manual correction. Automated rigging is not available at production quality, so the Unity results are hand-built. Use this path for research, not as an automated production pipeline.
+
+`cutout_parts.py` segments a reference with EVF-SAM and writes one RGBA sprite per text prompt. Every part is one paid request; pass `--yes` only after counting them.
+
+A part can be restricted to a crop with `NAME=PROMPT@X1,Y1,X2,Y2`. Crops help isolate background, but they do **not** fix overlapping limbs: EVF-SAM returns the torso when asked for the arm, and tighter crops produced slivers or empty masks in the pilot. Use manual masks for overlapping arm/hand layers. `--min-component-pixels` (default 200) drops detached specks.
+
+```powershell
+python scripts\cutout_parts.py segment `
+  --reference "art_references\2.Low-Poly Warrior with Ornate Glaive.png" `
+  --output-dir "output\option4\pilot\parts" `
+  --part "weapon=the polearm weapon" `
+  --part "head=the character's head and hair" `
+  --part "torso=the character's torso and armor" `
+  --part "upper_leg=the near leg@540,600,740,990" `
+  --yes
+```
+
+### Seedream layerize
+
+`layerize` decomposes a reference into named layers with `bytedance/seedream/v5/flash/layerize`. One request returns the base image plus up to 16 layers with `name`, `description`, `z_index`, and a bounding box. An empty prompt lets the model choose major elements; a detailed prompt produced 15 layers in the pilot.
+
+```powershell
+python scripts\cutout_parts.py layerize `
+  --reference "art_references\2.Low-Poly Warrior with Ornate Glaive.png" `
+  --output-dir "output\option4\pilot\layerize_glaive_parts" `
+  --prompt "Separate into independently editable layers: hair, head, face, neck, torso, pelvis, left upper arm, left forearm, left hand, right upper arm, right forearm, right hand, left thigh, left shin, left boot, right thigh, right shin, right boot, and the polearm weapon." `
+  --yes
+```
+
+Layer files are cropped to their own bounds. Use `bounding_box.absolute` to paste them back into the reference canvas. The model z-index puts the weapon behind the torso; the corrected occlusion order is stored under `render_order` in `full_canvas/parts.json`. Re-compositing is close but not pixel-identical because layerize regenerates detail, so keep the original reference as the canonical image.
+
+The pilot layers are imported into `templates/FalSprite/Assets/FalSprite/LayeredParts` and assembled in `Assets/FalSprite/Scenes/FalSpriteLayered.unity` with the corrected sorting order. That scene is static; it has no rig or animation yet.
+
+Inpainting is one FLUX Fill request and requires a mask with the same dimensions as the part image:
+
+```powershell
+python scripts\cutout_parts.py inpaint `
+  --image "output\option4\pilot\parts\torso.png" `
+  --mask "output\option4\pilot\masks\torso_gap.png" `
+  --output "output\option4\pilot\parts\torso_extended.png" `
+  --prompt "seamless extension of the flat-shaded low-poly anime armor, matching the palette and cel shading, plain white background" `
+  --yes
+```
+
+Outputs include `segmentation.json` (per-part prompt, coverage, empty-mask flag) and `<output>.inpaint.json` (prompt, seed, endpoint, call count).
 
 ### Rerun one action
 

@@ -301,6 +301,55 @@ class SpritesheetPipelineTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             generate_video(Path("missing.png"), Path("missing.txt"), Path("out"))
 
+    def test_generation_passes_explicit_h3_parameters(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            reference = root / "reference.png"
+            prompt = root / "prompt.txt"
+            Image.new("RGB", (20, 10), "white").save(reference)
+            prompt.write_text("animate", encoding="utf-8")
+            calls = []
+
+            def subscribe(endpoint, **kwargs):
+                calls.append((endpoint, kwargs["arguments"]))
+                return {"video": {"url": "https://example.com/video.mp4"}}
+
+            def write_video(url, destination):
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(b"video")
+
+            fake_client = SimpleNamespace(
+                upload_file=lambda path: "https://example.com/uploaded.png",
+                subscribe=subscribe,
+            )
+            env = {"FAL_KEY": "test-key"}
+            with patch.dict(sys.modules, {"fal_client": fake_client}):
+                with patch.dict(os.environ, env):
+                    with patch("scripts.generate_spritesheet.load_project_env"):
+                        with patch(
+                            "scripts.generate_spritesheet._download_asset",
+                            side_effect=write_video,
+                        ):
+                            generate_video(
+                                reference,
+                                prompt,
+                                root / "out",
+                                duration=5,
+                                resolution="768P",
+                                seed=424242,
+                                prompt_expansion_mode="disabled",
+                            )
+
+            arguments = calls[0][1]
+            self.assertEqual(arguments["duration"], 5)
+            self.assertEqual(arguments["resolution"], "768P")
+            self.assertEqual(arguments["seed"], 424242)
+            self.assertEqual(arguments["prompt_expansion_mode"], "disabled")
+            saved = json.loads(
+                (root / "out" / "generation.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(saved["parameters"]["resolution"], "768P")
+
     def test_apply_background_removal_rejects_unknown_mode(self):
         with self.assertRaises(ValueError):
             apply_background_removal(Path("unused"), mode="nope")

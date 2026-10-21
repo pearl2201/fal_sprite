@@ -1,5 +1,14 @@
 # Option 4 — LoRA + Image-to-Video + Inpainting + Unity 2D Animation
 
+> **Status: prototype only — not production quality (2026-10-22).**
+>
+> Option 4 has been prototyped end to end, but it is **not ready for production**. Two blockers remain:
+>
+> - **Segmentation is not production-grade.** EVF-SAM collapses overlapping limbs: the `arm` prompt returns the torso, `hand` is empty, and `skirt` returns the whole character. Seedream `layerize` produces clean named parts, but it regeneratively redraws them, is not pixel-faithful to the source, and its z-order must be corrected manually. Re-compositing the layers is close but not identical to the reference.
+> - **Automated rigging is not available at production quality.** No reliable automated bone/weight authoring or pose retargeting was found. Unity MCP can create objects, sprites, and scenes, but the current rigs are hand-built: a 5-sprite rigid cutout and a static 14-layer assembly. Joint pivots, weights, and animation keys still require a human.
+>
+> Treat this option as a research prototype. Production use requires manually authored layered art, manual rigging in Unity or Spine, and human animation/QA. Do not sell the current pipeline as an automated production solution.
+
 ## Concept
 
 Use a consistent image-generation model and compatible LoRA to establish the character's appearance, then generate a short image-to-video attack as a motion reference. Separate the character artwork into cutout parts for a reusable 2D rig; use inpainting only where cutting or articulating a part exposes missing/occluded artwork that must be extended. Build and animate the rig in Unity 2D Animation. Test Unity first to avoid Spine license cost; keep Spine as a fallback if Unity's workflow does not meet the animation needs.
@@ -95,6 +104,29 @@ Record:
 - Runtime/spritesheet export quality and cost per accepted animation.
 
 Proceed beyond the pilot only if the Unity animation is controllable and readable at game scale, weapon continuity and framing pass review, and the rig is reusable enough to offset cutout preparation. If Unity fails the package/runtime test, compare Spine before committing to the workflow and include its license cost in the production decision. If video adds little value, skip it and author poses directly in Unity. If cutout setup dominates the cost, compare option 2's curated frames or option 3's 3D rig.
+
+## Pilot result (2026-10-22)
+
+One character, one attack, Unity 6000.0.59f2, `templates/FalSprite`.
+
+| Step | Result |
+|---|---|
+| Motion reference | One H3 clip at 5 s, 768P, seed `424242`, prompt expansion disabled. The clip returned 124 frames at 24 fps with the usual model-invented streak during the strike, so it was used for timing only. |
+| Cutout segmentation | 18 EVF-SAM requests across three probes. `weapon`, `head`, `torso`, `upper_leg`, `lower_leg`, and `foot` were usable. The `arm` mask was 87% torso, `hand` was empty, and `skirt` returned the whole character. |
+| Seedream layerize | 2 requests. Empty prompt returned 3 layers (base, body, weapon). A detailed prompt returned 15 layers: base + hair, head/face, neck, torso, pelvis, both upper arms, both forearms/hands, both thighs/shins, both boots, and the polearm. Each layer has a name, description, z-index, and bounding box. |
+| Layer reconstruction | Resizing each layer to `bounding_box.absolute` and compositing in the model's z-order reconstructs the reference closely, but the model z-order places the polearm behind the torso. The correct occlusion order puts the weapon above the torso/upper arms and below the forearms/hands. A corrected preview is at `output/option4/pilot/layerize_glaive_parts/reconstructed_zorder_fixed.jpg`. |
+| Unity layered import | 14 full-canvas sprites imported under `Assets/FalSprite/LayeredParts`, PPU 480, sorting order from the corrected `render_order`. Static assembly scene: `Assets/FalSprite/Scenes/FalSpriteLayered.unity`; preview: `output/option4/pilot/unity_layered_preview.png`. No rig or animation was added yet. |
+| Production readiness | **No.** Segmentation is not pixel-faithful and needs manual cleanup/z-order; automated bone/weight authoring and pose retargeting are unavailable. Current Unity rigs are hand-built prototypes. |
+| Crop re-segmentation | Six crop-based requests (arm, hand, skirt, torso, legs) produced slivers or empty masks; tighter crops made EVF-SAM worse, not better. |
+| Local mask repair | Removed detached torso/head/leg fragments, kept the largest component, filled holes, and bridged the weapon's two shaft pieces with a 26 px line. The weapon is now one continuous sprite. Separate foot sprites were dropped because the leg masks already include the boots. |
+| Unity rig | Five sprites, PPU 480, hierarchy `Hips > Torso > Head/Weapon`, `Hips > LegFront`, `Hips > LegBack`. The arm sprite was dropped because its mask was the torso. |
+| Animation clip | `Assets/FalSprite/Animations/NormalAttack.anim`, 2 s, 24 fps, six key poses stored as **quaternion** curves (`localRotation.x/y/z/w`) plus hip translation. Legacy `Animation` component with `playAutomatically`. Scene: `Assets/FalSprite/Scenes/FalSpritePilot.unity`. |
+| Preview check | 13 rendered frames and `output/option4/pilot/unity_v10_preview.gif` show the torso swinging, hips lunging, and weapon angle changing. Sampled torso Z is 0° at t=0, 18° at t=1.1 s, and 0° at t=2 s. |
+
+Paid calls: **1 H3 generation ($0.30) + 18 EVF-SAM requests ($0.09) = $0.39**. No FLUX Fill call was made.
+
+Key finding: Seedream layerize is the better segmentation path. With a detailed prompt it produced 14 clean named body-part layers plus the weapon. Two limitations matter: the model's z-index puts the weapon behind the torso, so occlusion must be corrected manually, and the layers are generatively redrawn, so re-compositing is close but not pixel-identical to the reference. Use the original reference as the canonical image and the layers as rig parts. EVF-SAM cannot separate overlapping body parts: prompting `arm` returns the torso, and tight crops degrade the result. The Unity animation on the old 5-sprite rig uses **quaternion** curves rather than Euler curves so the legacy `Animation` component plays the same poses that `SampleAnimation` previews.
+
 
 ## Cost estimate
 
