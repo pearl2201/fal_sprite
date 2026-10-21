@@ -23,13 +23,20 @@ Next, use the selected poses as references for a small **Unity 2D Animation cuto
 
 The references are single rendered views, not layered 2D cutouts or rigged 3D assets. Option 4 will therefore need manual segmentation/hidden-art preparation, and Option 3 still needs mesh inspection and rigging. The first pilot should judge what the references actually enable, not assume those assets already exist.
 
+## Shared pipeline defaults
+
+Two rules apply to every Option 2 run and are not optional:
+
+1. **Pad the reference before uploading it.** The generator places the approved art on a larger blank canvas (default: 25% of width added per horizontal edge, 10% of height per vertical edge) without scaling or cropping the character. This is what gives the weapon, hair, and limbs room to move; the unpadded first pilot clipped the glaive. `generate` now rejects zero padding, and every run records the padding values in `generation.json`.
+2. **Remove the background from the packed spritesheet, not from each frame.** BiRefNet v2 runs once per animation after the atlas is built (default `--background-mode sheet`), and the returned atlas is cropped back into per-frame PNGs using the saved layout. That is one request per animation instead of one per frame — 7 instead of 56 for a seven-action set. Use `--background-mode frames` only when final-art edge fidelity matters more than cost.
+
 ## Known assumptions and verification needs
 
 - The FAL Z-Image Turbo LoRA page describes a text-to-image endpoint with inference-time LoRA support. It does not, by itself, establish that this endpoint accepts OpenPose/ControlNet conditioning. Option 1 therefore requires a compatible pose-conditioned endpoint and a LoRA trained for, or verified against, its base model.
 - The linked Civitai model page could not be independently inspected during this research pass. Verify the exact downloadable LoRA, supported checkpoint(s), license, and compatibility before using it.
 - The requested Tripo identifier **P1-20260311** is documented as a P Series value for `POST https://openapi.tripo3d.ai/v3/generation/image-to-model`. Check the current API docs for request fields and account access before implementation.
 - Use the specified [fal MiniMax H3 Max Turbo image-to-video endpoint](https://fal.ai/models/minimax/h3-max-turbo/image-to-video). Confirm current duration, resolution, pricing, and API constraints before budgeting.
-- Use [BiRefNet v2](https://fal.ai/models/fal-ai/birefnet/v2) optionally after frame selection; retain the original RGB frames alongside its alpha outputs.
+- Use [BiRefNet v2](https://fal.ai/models/fal-ai/birefnet/v2) on the packed spritesheet by default (one request per animation) rather than per frame; retain the original RGB frames alongside its alpha outputs.
 - Compare [fal-ai/inpaint](https://fal.ai/models/fal-ai/inpaint) and [FLUX.1 Pro Fill](https://fal.ai/models/fal-ai/flux-pro/v1/fill) on the same masked defects. The latter page lists $0.05/MP; verify the former's current pricing and behavior.
 - Unity 2D Animation is the first skeletal-animation workflow to test because Spine license cost is being excluded from the comparison. Check installed Unity/package versions and prototype import/rig/export before treating the workflow as settled. Spine remains an alternative.
 - MCP availability and write/export capabilities are environment-specific. DeepSeek can plan work and request MCP tools, but it cannot author a Unity or Spine project unless an appropriate MCP server or other automation interface is available and validated.

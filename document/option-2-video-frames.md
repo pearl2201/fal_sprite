@@ -12,12 +12,12 @@ The requested FAL endpoint is identified. Before implementation, verify its curr
 
 ## Workflow
 
-1. **Prepare a padded input** — approve the right-facing reference and add blank canvas around it before video generation. The default CLI adds 25% of the source width to each horizontal side and 10% of the source height above and below, without scaling or cropping the character. This gives the weapon and limbs space to move; it cannot guarantee that the video model will never zoom, reframe, or crop them. Adjust padding if a test still clips.
+1. **Prepare a padded input** — approve the right-facing reference and add blank canvas around it before video generation. This step is required, not optional: `generate` rejects zero padding. The default CLI adds 25% of the source width to each horizontal side and 10% of the source height above and below, without scaling or cropping the character. This gives the weapon and limbs space to move; it cannot guarantee that the video model will never zoom, reframe, or crop them. Adjust padding if a test still clips.
 2. **Send a short, controlled action prompt** — use the existing [action prompt](../prompt/action_prompt.txt) as the baseline. It specifies one fast polearm attack, return to idle, a locked orthographic camera, a singular physical weapon, and no added visual effects.
 3. **Generate short clips** — keep the same input image and settings while comparing a small number of prompt/model settings. Record model ID/version, seed if available, duration, and generation parameters.
 4. **Inspect the whole clip** — reject clips with camera motion, design changes, extra weapons/effects, implausible weapon deformation, clipping, or an unstable return pose. Do not use automated frame extraction to disguise these failures.
 5. **Remove reference-like idle endpoints, then select usable frames** — compare the video's first and last frames with the reference after cropping/normalizing the visible subject. If either endpoint reaches the configurable similarity threshold (default `0.95`), omit that endpoint before selecting visually distinct or uniformly spaced poses. The measured similarities and trim decisions are saved to metadata; review them rather than treating the threshold as a universal perceptual metric. Retain original source-frame indices and timestamps so timing can be adjusted in the game.
-6. **Optional background removal** — after reviewing the raw video and selected frames, run [BiRefNet v2](https://fal.ai/models/fal-ai/birefnet/v2) on the sampled images to create transparent PNGs. Keep original frames and atlas unchanged; write alpha results separately for edge review.
+6. **Optional background removal** — after the spritesheet is built, run [BiRefNet v2](https://fal.ai/models/fal-ai/birefnet/v2) either on the packed sheet (default, one request per animation) or on each sampled frame (`--background-mode frames`, one request per frame). Keep original frames and atlas unchanged; write alpha results separately for edge review.
 7. **Normalize** — crop/letterbox to a fixed canvas, align the ground point and character center, preserve the target right-facing orientation, and verify the alpha edges if background removal was run. Save individual frames and a sheet plus metadata (frame order, duration/timing, pivot).
 8. **Review at target scale** — inspect the strip in motion at the intended frame rate and at actual in-game size. Hand-correct or discard failures.
 
@@ -55,7 +55,7 @@ Keep processing conservative and reproducible:
 - Detect near-duplicate frames and produce a contact sheet for human selection.
 - Export an atlas and a simple metadata file with source timestamps, frame order, dimensions, and pivot.
 - Pad the source image on a clean background before upload and record source/canvas dimensions.
-- Optionally call BiRefNet v2 once per selected frame; preserve raw frames and emit a separate alpha atlas.
+- Optionally call BiRefNet v2 on the packed atlas (one request) or once per selected frame (sharpest edges); preserve raw frames and emit a separate alpha atlas.
 
 Do not automatically add motion blur, slash arcs, particles, or generated effects; the source prompt explicitly prohibits them. Make raw extracted frames available alongside cleaned outputs so processing decisions remain auditable.
 
@@ -103,6 +103,56 @@ Tested [rembg](https://github.com/danielgatis/rembg) `2.0.85` with its `isnet-an
 
 At alpha >127, rembg and BiRefNet masks had mean IoU `0.9592` across the eight frames. The lowest agreement was `0.8918` on frame 002, which contains the bright attack streak. Visual review shows rembg retains the character and weapon, but produces substantially more soft/partial-alpha pixels and some gray edge/ghosting around hair and motion-smear regions. The IoU is only a mask-agreement measure, not an image-quality score. This small test suggests rembg is a viable no-per-image-API-cost local alternative worth keeping for evaluation, but does not establish that it is better than BiRefNet; inspect fine edges and the smeared attack frame before choosing it for production. No project dependency or processing behavior was changed.
 
+### Full animation set pilot
+
+Seven H3 Max Turbo generations were run from the same padded glaive reference, one per required action, using per-action prompts under [prompt/animation_set](../prompt/animation_set). Each output is isolated in `output/option2_animation_set/<action>/` with its raw clip, eight sampled frames, RGB sheet, and metadata. Idle was sampled uniformly with reference endpoints kept so the loop could close; walk, run, attack, hurt, death, and skill used diverse sampling with reference-like endpoints trimmed.
+
+BiRefNet v2 was then applied to all 56 selected frames (eight per action), producing `frames_alpha/`, `spritesheet_alpha.png`, `contact_sheet_alpha.jpg`, and a `background_removal` block in each `metadata.json`. Raw frames, RGB sheets, and source clips were preserved. Review the [combined overview](../output/option2_animation_set/animation_set_overview.jpg) and the [set index](../output/option2_animation_set/animation_set_index.json).
+
+| Action | Frames | Notes |
+|---|---:|---|
+| Idle | 8 | Subtle breathing loop; endpoints kept. |
+| Walk | 8 | Readable walk-in-place cycle; low motion produced few diverse frames, so uniform sampling was used. |
+| Run | 8 | Energetic run cycle with clear stride phases. |
+| Normal Attack | 8 | Wind-up through recovery; the model still inserted a bright streak in two mid-strike frames. |
+| Hurt | 8 | Flinch and recovery; low motion, resampled uniformly. |
+| Death | 8 | Controlled fall ending in a still ground pose. |
+| Skill Attack | 8 | Broad polearm maneuver; also shows model-added streaks. |
+
+These are consistent motion references, not final game-ready art. The streak artifacts violate the prompt constraints and need hand repair or discarding; the alpha edges and any weapon deformation must also be reviewed at full size.
+
+### Combined review GIF
+
+[build_animation_gif.py](../scripts/build_animation_gif.py) plays every animation in one GIF for motion review:
+
+```powershell
+python scripts\build_animation_gif.py
+```
+
+Default order is **idle → walk → run → normal attack → skill attack → hurt → death**, followed by any other animation folder found under the root, alphabetically. Override it with `--order idle,walk,run`. Frames come from `frames_alpha\` when present (`--prefer frames` uses the raw RGB frames instead), and each frame gets a `name n/total` label that `--no-label` hides.
+
+The default run produced [animation_set.gif](../output/option2_animation_set/animation_set.gif): 56 frames, 480 × 336, 10 fps, 984 KiB, looping forever. `--hold-last` (default 2) doubles the final frame of each action so the end pose is readable; `--fps`, `--max-width`, `--background`, and `--loop` adjust playback and size. A `<output>.json` sidecar records the exact frame order for traceability. The script only reads PNGs, so it never calls an API.
+
+### Second character run: horned skull-masked warrior
+
+The full pipeline was repeated for [art_references/4.Horned Skull-Masked Armored Warrior.png](../art_references/4.Horned%20Skull-Masked%20Armored%20Warrior.png), a cleaver-and-shield design rather than a polearm. Per-action prompts were written for that specific loadout under [prompt/animation_set_skull_warrior](../prompt/animation_set_skull_warrior), because reusing the glaive prompts would have described the wrong weapon.
+
+Run shape: seven H3 generations at `--horizontal-padding 0.30 --vertical-padding 0.20`, portrait source 1055 × 1491 padded to 1687 × 2087, clips returned at 768 × 960 / 24 fps / 124 frames. Idle used uniform sampling with endpoints kept; walk, run, and hurt used uniform; normal attack, death, and skill attack used diverse. BiRefNet ran once per packed sheet (`sheet` mode), so background removal cost 7 requests instead of 56. Outputs are under `output/option2_animation_set_skull_warrior/`.
+
+Review the [set overview](../output/option2_animation_set_skull_warrior/animation_set_overview.jpg), [looping GIF](../output/option2_animation_set_skull_warrior/animation_set.gif), and [set index](../output/option2_animation_set_skull_warrior/animation_set_index.json).
+
+| Action | Usable frames | Observed defects |
+|---|---:|---|
+| Idle | 8/8 | None; design, mask, cleaver, and shield stay consistent. |
+| Hurt | 8/8 | None; readable flinch and recovery. |
+| Walk | 5/8 | Frames 03, 06, 07 flatten the round shield into a capsule shape. |
+| Normal Attack | 5/8 | Frames 03–05 contain large white motion-smear arcs, a prohibited effect. |
+| Death | 5/8 | Frames 05–07 collapse the body into an unreadable mass. |
+| Run | 2/8 | Frames 01–06 collapse the coat into a flat tan shape and deform the shield. |
+| Skill Attack | 3/8 | Shield becomes a capsule in 02–04, frame 04 adds a smear arc, and 06–07 redraw the shield with different hardware. |
+
+This is the clearest evidence so far that prompt constraints alone do not stop the model from inventing speed effects or deforming rigid props. Two practical levers, in order of cost: regenerate only the failing actions, or curate frames per action instead of accepting a fixed count. The cleaver-and-shield loadout is harder than the single polearm because two rigid objects must stay coherent through fast motion.
+
 ## Cost estimate
 
 For the shared one-character pilot assumptions and cost formula, see [cost estimate](./cost-estimate.md). This option's variable is primarily the number and length of H3 Max Turbo clip generations; record the actual FAL quote/rate before running retries. Optional frame inpainting is not included in this extraction-only option.
@@ -123,7 +173,15 @@ To compare both clip endpoints against a reference explicitly:
 python scripts\generate_spritesheet.py process path\to\clip.mp4 --output-dir output\option2_trimmed --selection uniform --reference-image path\to\padded_reference.png --reference-similarity-threshold 0.95
 ```
 
-If the input clip's folder contains `generation.json`, the CLI can locate its uploaded or original reference automatically; `--reference-image` overrides that lookup. Endpoint matching is local and does not call an API. This command does not create or modify transparent frames; background removal remains a separate optional step.
+If the input clip's folder contains `generation.json`, the CLI can locate its uploaded or original reference automatically; `--reference-image` overrides that lookup. Endpoint matching is local and does not call an API. Add `--keep-reference-endpoints` for looping clips such as idle, where the matching first and last frames are wanted rather than trimmed. This command does not create or modify transparent frames; background removal remains a separate optional step.
+
+To generate one animation from a per-action prompt into its own folder:
+
+```powershell
+python scripts\generate_spritesheet.py generate --prompt prompt\animation_set\run.txt --output-dir output\option2_animation_set\run --horizontal-padding 0.25 --vertical-padding 0.25 --yes
+```
+
+Add `--keep-reference-endpoints` for idle. Each `generate` call submits one potentially paid H3 request; `--remove-background` adds one BiRefNet request per animation (sheet mode) or one per sampled frame (`--background-mode frames`).
 
 To preview the padded input canvas without uploading or calling an API:
 
@@ -137,7 +195,22 @@ To submit one generation using the default glaive reference and action prompt:
 python scripts\generate_spritesheet.py generate --yes
 ```
 
-`prepare` previews the padded input locally without a network request. `generate` pads the source image, uploads the padded reference to fal.ai, and can incur a charge; `--yes` is the explicit confirmation. Defaults add 25% of the reference width to each side and 10% of its height to the top and bottom. Override them with `--horizontal-padding 0.35 --vertical-padding 0.15` (fractions per edge, from 0 to 1). Padding creates room but cannot force the video model to preserve framing. The script reads `FAL_KEY`, `FAL_API`, or `FAL_API_KEY` from the process environment or project `.env` without printing it. Review live endpoint pricing/schema before running. Default output includes `padded_reference.png`, `generation.json`, `source_video.mp4`, sampled PNGs under `frames\`, `spritesheet.png`, `contact_sheet.jpg`, and `metadata.json`. The video background is preserved by default. Add `--remove-background` to submit one BiRefNet v2 request per selected frame; this creates `frames_alpha\`, `spritesheet_alpha.png`, and `contact_sheet_alpha.jpg` without replacing originals. This flag can incur additional charges. For an existing clip, run `python scripts\generate_spritesheet.py process path\to\clip.mp4 --output-dir output\option2 --remove-background`; add `--yes` only after checking the current BiRefNet price. Diversity sampling may emit fewer than the requested frame count if the clip contains too few distinct-looking poses.
+`prepare` previews the padded input locally without a network request. `generate` pads the source image, uploads the padded reference to fal.ai, and can incur a charge; `--yes` is the explicit confirmation. Defaults add 25% of the reference width to each side and 10% of its height to the top and bottom. Override them with `--horizontal-padding 0.35 --vertical-padding 0.15` (fractions per edge, from 0 to 1). Padding creates room but cannot force the video model to preserve framing. The script reads `FAL_KEY`, `FAL_API`, or `FAL_API_KEY` from the process environment or project `.env` without printing it. Review live endpoint pricing/schema before running. Default output includes `padded_reference.png`, `generation.json`, `source_video.mp4`, sampled PNGs under `frames\`, `spritesheet.png`, `contact_sheet.jpg`, and `metadata.json`. The video background is preserved by default.
+
+### Background removal call count
+
+`--remove-background` runs only after `spritesheet.png` exists, and `--background-mode` decides how many paid BiRefNet requests that costs:
+
+| Mode | Requests per animation | Trade-off |
+|---|---:|---|
+| `sheet` (default) | 1 | Entire atlas is resized to BiRefNet's operating resolution, so each character gets fewer mask pixels. |
+| `frames` | 1 per sampled frame (8 by default) | Full per-character resolution and sharper edges. |
+
+Both modes write `frames_alpha\`, `spritesheet_alpha.png`, and `contact_sheet_alpha.jpg` without replacing originals, and both record `mode` and `api_calls` in `metadata.json`. Sheet mode crops the returned atlas back into per-frame PNGs using the saved layout.
+
+Measured on the idle clip: sheet mode produced one mask per eight frames with mean IoU `0.9417` against the per-frame result and raised the partial-alpha share from `2.3%` to `5.5%`, which is the expected softness from downscaling a 4608 × 1536 atlas. Visual comparison at full size was close, so sheet mode is a reasonable default for review passes; use `frames` mode for final art where thin glaive and hair edges matter.
+
+For an existing clip, run `python scripts\generate_spritesheet.py process path\to\clip.mp4 --output-dir output\option2 --remove-background`; add `--yes` only after checking the current BiRefNet price. Diversity sampling may emit fewer than the requested frame count if the clip contains too few distinct-looking poses.
 
 ## Human work boundary
 
@@ -148,4 +221,4 @@ Humans approve the input design, inspect clip-level failures, select frames, and
 - [Action prompt](../prompt/action_prompt.txt) — supplied project prompt and visual constraints.
 - [FAL Z-Image Turbo LoRA](https://fal.ai/models/fal-ai/z-image/turbo/lora) — possible reference-image creation/style stage; LoRA is not assumed to transfer into the video model.
 - [fal MiniMax H3 Max Turbo image-to-video](https://fal.ai/models/minimax/h3-max-turbo/image-to-video) — requested animation-reference endpoint; confirm current API schema and billing in the model page/API response.
-- [BiRefNet v2](https://fal.ai/models/fal-ai/birefnet/v2) — optional background-removal endpoint for sampled video frames.
+- [BiRefNet v2](https://fal.ai/models/fal-ai/birefnet/v2) — optional background-removal endpoint for the packed spritesheet or individual sampled frames.

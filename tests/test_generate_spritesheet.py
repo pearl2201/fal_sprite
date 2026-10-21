@@ -16,10 +16,13 @@ from scripts.generate_spritesheet import (
     _confirm_background_removal,
     _select_diverse_indices,
     _sample_indices,
+    apply_background_removal,
+    generate_video,
     load_project_env,
     prepare_padded_reference,
     process_video,
     remove_background_from_frames,
+    remove_background_from_sheet,
 )
 
 
@@ -147,6 +150,41 @@ class SpritesheetPipelineTests(unittest.TestCase):
             self.assertGreaterEqual(comparison["first_similarity"], 0.95)
             self.assertGreaterEqual(comparison["last_similarity"], 0.95)
 
+    def test_process_video_can_keep_idle_loop_endpoints(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            video_path = root / "idle.avi"
+            writer = cv2.VideoWriter(
+                str(video_path),
+                cv2.VideoWriter_fourcc(*"MJPG"),
+                10.0,
+                (64, 48),
+            )
+            self.assertTrue(writer.isOpened())
+            for index in range(10):
+                writer.write(np.full((48, 64, 3), index * 20, dtype=np.uint8))
+            writer.release()
+
+            records = process_video(
+                video_path,
+                root / "idle_output",
+                frame_count=4,
+                columns=2,
+                selection="uniform",
+                keep_reference_endpoints=True,
+            )
+
+            self.assertEqual(
+                [record["source_frame"] for record in records],
+                [0, 3, 6, 9],
+            )
+            metadata = json.loads(
+                (root / "idle_output" / "metadata.json").read_text(encoding="utf-8")
+            )
+            self.assertFalse(metadata["reference_endpoint_comparison"]["enabled"])
+            self.assertFalse(metadata["reference_endpoint_comparison"]["first_removed"])
+            self.assertFalse(metadata["reference_endpoint_comparison"]["last_removed"])
+
     def test_invalid_video_raises_clear_error(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             missing_video = Path(temporary_directory) / "missing.mp4"
@@ -205,6 +243,74 @@ class SpritesheetPipelineTests(unittest.TestCase):
             self.assertTrue((root / "spritesheet_alpha.png").is_file())
             metadata = json.loads((root / "metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["background_removal"]["endpoint"], "fal-ai/birefnet/v2")
+
+
+    def test_sheet_background_removal_uses_one_api_call(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            Image.new("RGB", (40, 12), "white").save(root / "spritesheet.png")
+            metadata = {
+                "frame_size": {"width": 20, "height": 12},
+                "sampled_frame_count": 2,
+                "layout": {"columns": 2, "rows": 1},
+            }
+            (root / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+
+            endpoints = []
+
+            def subscribe(endpoint, **kwargs):
+                endpoints.append(endpoint)
+                return {"image": {"url": "https://example.test/sheet.png"}}
+
+            fake_client = SimpleNamespace(
+                upload_file=lambda path: "https://example.test/input.png",
+                subscribe=subscribe,
+            )
+
+            def write_transparent_sheet(_url, destination):
+                rgba = Image.new("RGBA", (40, 12), (0, 0, 0, 0))
+                rgba.paste((20, 40, 60, 255), (0, 0, 20, 12))
+                rgba.save(destination)
+
+            with patch.dict(sys.modules, {"fal_client": fake_client}):
+                with patch.dict(os.environ, {"FAL_KEY": "test-key"}):
+                    with patch("scripts.generate_spritesheet.load_project_env"):
+                        with patch(
+                            "scripts.generate_spritesheet._download_asset",
+                            side_effect=write_transparent_sheet,
+                        ):
+                            records = remove_background_from_sheet(root)
+
+            self.assertEqual(len(endpoints), 1)
+            self.assertEqual(endpoints[0], "fal-ai/birefnet/v2")
+            self.assertEqual(len(records), 2)
+            self.assertTrue((root / "spritesheet_alpha.png").is_file())
+            self.assertTrue((root / "contact_sheet_alpha.jpg").is_file())
+            self.assertEqual(len(list((root / "frames_alpha").glob("*.png"))), 2)
+            updated = json.loads((root / "metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(updated["background_removal"]["mode"], "sheet")
+            self.assertEqual(updated["background_removal"]["api_calls"], 1)
+
+    def test_generation_rejects_unpadded_reference(self):
+        with self.assertRaises(ValueError):
+            generate_video(Path("missing.png"), Path("missing.txt"), Path("out"), horizontal_padding=0)
+        with self.assertRaises(ValueError):
+            generate_video(Path("missing.png"), Path("missing.txt"), Path("out"), vertical_padding=0)
+
+    def test_generation_defaults_to_padded_reference(self):
+        with self.assertRaises(FileNotFoundError):
+            generate_video(Path("missing.png"), Path("missing.txt"), Path("out"))
+
+    def test_apply_background_removal_rejects_unknown_mode(self):
+        with self.assertRaises(ValueError):
+            apply_background_removal(Path("unused"), mode="nope")
+
+    def test_sheet_background_removal_requires_existing_sheet(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch.dict(os.environ, {"FAL_KEY": "test-key"}):
+                with patch("scripts.generate_spritesheet.load_project_env"):
+                    with self.assertRaises(FileNotFoundError):
+                        remove_background_from_sheet(Path(temporary_directory))
 
 
 if __name__ == "__main__":

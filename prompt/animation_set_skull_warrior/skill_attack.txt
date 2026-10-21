@@ -1,0 +1,7 @@
+Perform one distinctive, powerful skill attack with the cleaver and shield, then return to the original idle pose. One attack only, no loop.
+
+Use an unmistakable preparation, a broad committed cleaver swing supported by a forward shield brace or shoulder charge, and a controlled recovery. The character faces right throughout. The blade is a single solid, physical cleaver on a short haft, and the shield is a single round studded shield on the off-hand forearm. Both remain physically separate, singular, and continuous in every frame; do not merge them into one object.
+
+Do not add visual effects: no weapon trails, slash arcs, motion trails, afterimages, ghost weapons, duplicated weapon silhouettes, glowing streaks, slash waves, energy blades, impact splashes, particles, sparks, smoke, magic, or added shapes. Make the skill feel forceful only through the character's movement and the physical weapon motion.
+
+Preserve the original character design exactly: horned skull mask, black fur mantle, teal coat with yellow trim, red scarf and sash, bandaged forearms, strapped boots, and the same proportions and colors. Fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, horns, hair, feet, cleaver, and shield inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects.

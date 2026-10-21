@@ -1,0 +1,9 @@
+Create a seamless idle animation loop for this character.
+
+The character remains in the original relaxed standing pose, facing right. Animate only subtle breathing, a small natural weight shift, gentle hair and ribbon movement, and minimal cloth motion. Keep the feet approximately planted and the weapon held steadily in the same grip. Complete one quiet loop and return to the exact starting pose.
+
+Character-only animation. Preserve the original character design, outfit, weapon geometry, colors, proportions, and white background. The weapon is one solid, continuous physical object.
+
+Camera: fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, hair, feet, and weapon inside the frame with generous empty margins. No camera movement, zoom, pan, rotation, or reframing.
+
+No walking, running, attacking, jumping, turning, pose change, weapon effects, trails, particles, sparks, smoke, magical effects, added objects, environment, or text. Pure white background. Output clean isolated game-character animation frames for spritesheet extraction.

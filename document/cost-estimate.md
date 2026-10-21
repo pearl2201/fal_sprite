@@ -38,6 +38,22 @@ Optional BiRefNet v2 background removal also has an account/model-specific cost 
 - Unity 2D Animation and Spine license costs are omitted from the table. Unity should be tested first per the requested preference; include the appropriate Spine license cost only if the fallback is selected.
 - Each estimate excludes human labor. Option 3 and option 4 can have low API charges while requiring substantial manual modeling/rigging and art preparation, so compare labor separately before choosing.
 
+## Observed usage for the full animation set pilot
+
+The seven-action pilot recorded billable units rather than USD, because H3 and BiRefNet rates were not verifiable at run time. Reconstruct the spend from the FAL account dashboard using these counts:
+
+| Item | Endpoint | Units |
+|---|---|---:|
+| Video generations | `minimax/h3-max-turbo/image-to-video` | 7 clips (glaive) + 7 clips (skull warrior) |
+| Background removal, glaive set | `fal-ai/birefnet/v2` | 56 images (8 per action, per-frame mode) |
+| Background removal, skull warrior set | `fal-ai/birefnet/v2` | 7 images (1 per action, sheet mode) |
+| Local extraction, trimming, atlas packing | Python/OpenCV | 0 billable |
+| Local rembg comparison test | `isnet-anime` via rembg | 0 billable |
+
+The glaive set used per-frame background removal (`--background-mode frames`). The skull warrior set used the new `sheet` default, covering the same 56 frames in **7 requests instead of 56**, at the resolution trade-off described in [option 2](./option-2-video-frames.md#background-removal-call-count).
+
+No retries were run, so one clip per action is the only video spend. A production set typically needs additional attempts per action, so multiply by the accepted-attempt rate you observe in practice.
+
 ## Pilot accounting template
 
 For each attempt, record:

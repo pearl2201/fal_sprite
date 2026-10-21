@@ -1,0 +1,7 @@
+Create one continuous run-in-place animation for this character, facing right.
+
+Show a readable repeating side-view run cycle with energetic alternating strides, stronger arm motion, and a clear but controlled body bounce. Keep the character centered and at a constant scale; the feet cycle in place rather than moving the character across the screen. Keep the weapon held securely as one solid, continuous physical object, with restrained secondary movement. Finish by returning close to the original idle pose.
+
+Preserve the original character design, outfit, weapon geometry, colors, proportions, and white background. No weapon trails, slash arcs, afterimages, duplicate weapons, particles, sparks, smoke, magical effects, or added shapes.
+
+Camera: fixed orthographic side view, locked camera, constant framing. Keep the entire character, hair, feet, and weapon inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects. Output clean isolated game-character animation frames for spritesheet extraction.

@@ -1,0 +1,7 @@
+Create one continuous run-in-place animation for this character, facing right.
+
+Show a readable repeating side-view run cycle with energetic alternating strides, stronger arm motion, and a clear but controlled body bounce. Keep the character centered and at a constant scale; the feet cycle in place rather than moving across the screen. The character carries the single heavy cleaver-style blade in the near hand and keeps the single round studded shield on the off-hand forearm; both stay complete and attached, with restrained secondary movement. Finish close to the original idle pose.
+
+Preserve the original character design exactly: horned skull mask, black fur mantle, teal coat with yellow trim, red scarf and sash, bandaged forearms, strapped boots, and the same proportions and colors. No weapon trails, slash arcs, afterimages, duplicated blades or shields, particles, sparks, smoke, magical effects, or added shapes.
+
+Camera: fixed orthographic side view, locked camera, constant framing. Keep the entire character, horns, hair, feet, cleaver, and shield inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects. Output clean isolated game-character animation frames for spritesheet extraction.

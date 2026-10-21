@@ -1,0 +1,7 @@
+Perform one distinctive, powerful skill attack with the polearm, then return to the original idle pose. One attack only, no loop.
+
+Use an unmistakable preparation, broad committed polearm maneuver, and controlled recovery. The character faces right throughout. The weapon remains one solid, physical object, held by the character, and visually singular and continuous in every frame.
+
+Do not add visual effects: no weapon trails, slash arcs, motion trails, afterimages, ghost weapons, duplicated weapon silhouettes, glowing streaks, slash waves, energy blades, impact splashes, particles, sparks, smoke, magic, or added shapes. Make the skill feel forceful only through the character's movement and the physical polearm motion.
+
+Preserve the original character design, outfit, weapon geometry, colors, proportions, and white background. Fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, hair, feet, and weapon inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects.

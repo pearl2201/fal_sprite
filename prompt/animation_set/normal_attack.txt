@@ -1,0 +1,7 @@
+Perform one fast, powerful normal polearm attack, then return to the original idle pose. One attack only, no loop.
+
+Use a clear preparation, wind-up, committed strike, and recovery. The character faces right throughout. The weapon is a single solid, physical object held by the character and remains visually singular and continuous in every frame.
+
+Absolutely no weapon effects: no trails, slash arcs, motion trails, afterimages, ghost weapons, duplicated weapon silhouettes, glowing streaks, slash waves, energy blades, impact splashes, particles, sparks, smoke, magical effects, or added shapes around the weapon. Convey speed only through the character's body pose and physical weapon movement.
+
+Preserve the original character design, outfit, weapon geometry, colors, proportions, and white background. Fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, hair, feet, and weapon inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects.

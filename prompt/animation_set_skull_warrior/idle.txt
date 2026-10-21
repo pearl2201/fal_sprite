@@ -1,0 +1,9 @@
+Create a seamless idle animation loop for this character.
+
+The character remains in a relaxed standing pose, facing right, holding the single heavy cleaver-style blade in the near hand and keeping the single round studded shield on the off-hand forearm. Animate only subtle breathing, a small weight shift, gentle movement of the black fur mantle and hair, and minimal cloth motion. Keep the feet approximately planted. Complete one quiet loop and return to the exact starting pose.
+
+Character-only animation. Preserve the original character design exactly: horned skull mask, black fur mantle, teal coat with yellow trim, red scarf and sash, bandaged forearms, strapped boots, and the same proportions and colors. The cleaver and the shield are each one solid, continuous physical object and must stay complete in every frame.
+
+Camera: fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, horns, hair, feet, cleaver, and shield inside the frame with generous empty margins. No camera movement, zoom, pan, rotation, or reframing.
+
+No attacking, walking, running, jumping, turning, weapon effects, trails, particles, sparks, smoke, magical effects, added objects, environment, or text. Pure white background. Output clean isolated game-character animation frames suitable for spritesheet extraction.

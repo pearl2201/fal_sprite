@@ -136,7 +136,13 @@ def generate_video(
     horizontal_padding: float = 0.25,
     vertical_padding: float = 0.10,
 ) -> Path:
-    """Upload a reference and submit one paid H3 Max Turbo generation."""
+    """Upload a padded reference and submit one paid H3 Max Turbo generation."""
+    if horizontal_padding <= 0 or vertical_padding <= 0:
+        raise ValueError(
+            "The reference must be padded before generation so the weapon, hair, and "
+            "limbs stay inside the frame. Pass a positive --horizontal-padding and "
+            "--vertical-padding (defaults: 0.25 and 0.10)."
+        )
     load_project_env(ROOT / ".env")
     if not os.environ.get("FAL_KEY"):
         raise RuntimeError("FAL_KEY is missing. Add it to the environment or project .env file.")
@@ -345,11 +351,84 @@ def _resolve_reference_image(
     return None
 
 
+def _remove_background_single(image_path: Path, destination: Path) -> Image.Image:
+    """Submit one paid BiRefNet request and save its transparent result."""
+    import fal_client
+
+    image_url = fal_client.upload_file(str(image_path))
+    if not isinstance(image_url, str) or not image_url.startswith("https://"):
+        raise RuntimeError(f"fal.ai did not return a valid URL for {image_path.name}.")
+
+    result: Any = fal_client.subscribe(
+        BACKGROUND_ENDPOINT,
+        arguments={
+            "image_url": image_url,
+            "model": "General Use (Light)",
+            "operating_resolution": "2048x2048",
+            "output_format": "png",
+            "refine_foreground": True,
+            "output_mask": False,
+        },
+        with_logs=True,
+    )
+    image_data = result.get("image") if isinstance(result, dict) else None
+    result_url = image_data.get("url") if isinstance(image_data, dict) else None
+    if not isinstance(result_url, str):
+        raise RuntimeError(
+            f"BiRefNet response for {image_path.name} did not include image.url."
+        )
+
+    _download_asset(result_url, destination)
+    with Image.open(destination) as removed_background:
+        rgba = removed_background.convert("RGBA")
+    if rgba.getchannel("A").getextrema() == (255, 255):
+        destination.unlink(missing_ok=True)
+        raise RuntimeError(
+            f"BiRefNet output for {image_path.name} has no transparency; "
+            "the source image was preserved."
+        )
+    rgba.save(destination, format="PNG")
+    return rgba
+
+
+def _write_alpha_contact_sheet(
+    tiles: list[Image.Image],
+    destination: Path,
+    columns: int = 4,
+) -> None:
+    columns = max(1, min(columns, len(tiles)))
+    rows = (len(tiles) + columns - 1) // columns
+    tile_width, tile_height = tiles[0].size
+    contact_width = min(tile_width, 320)
+    contact_height = max(1, round(tile_height * contact_width / tile_width))
+    contact = Image.new("RGB", (contact_width * columns, (contact_height + 28) * rows), "white")
+    draw = ImageDraw.Draw(contact)
+
+    for index, image in enumerate(tiles):
+        thumb = image.resize((contact_width, contact_height), Image.Resampling.LANCZOS)
+        x = (index % columns) * contact_width
+        y = (index // columns) * (contact_height + 28)
+        contact.paste(thumb, (x, y), thumb)
+        draw.text((x + 6, y + contact_height + 6), f"Frame {index:03d}", fill="black")
+
+    contact.save(destination, quality=90)
+
+
+def _stack_alpha_tiles(tiles: list[Image.Image], columns: int = 4) -> Image.Image:
+    columns = max(1, min(columns, len(tiles)))
+    rows = (len(tiles) + columns - 1) // columns
+    tile_width, tile_height = tiles[0].size
+    atlas = Image.new("RGBA", (tile_width * columns, tile_height * rows), (0, 0, 0, 0))
+    for index, image in enumerate(tiles):
+        atlas.alpha_composite(image, ((index % columns) * tile_width, (index // columns) * tile_height))
+    return atlas
+
+
 def remove_background_from_frames(
     frames_dir: Path,
     output_dir: Path,
 ) -> list[dict[str, Any]]:
-    """Remove backgrounds from selected frames using BiRefNet and keep originals."""
+    """Remove backgrounds per frame: highest mask resolution, one call per frame."""
     load_project_env(ROOT / ".env")
     if not os.environ.get("FAL_KEY"):
         raise RuntimeError("FAL_KEY is missing. Add it to the environment or project .env file.")
@@ -360,8 +439,6 @@ def remove_background_from_frames(
     if not frame_paths:
         raise FileNotFoundError(f"No sampled PNG frames found in {frames_dir}")
 
-    import fal_client
-
     output_alpha_dir = output_dir / "frames_alpha"
     output_alpha_dir.mkdir(parents=True, exist_ok=True)
     records: list[dict[str, Any]] = []
@@ -369,42 +446,9 @@ def remove_background_from_frames(
 
     for frame_path in frame_paths:
         print(f"Removing background from {frame_path.name}...")
-        image_url = fal_client.upload_file(str(frame_path))
-        if not isinstance(image_url, str) or not image_url.startswith("https://"):
-            raise RuntimeError(f"fal.ai did not return a valid URL for {frame_path.name}.")
-
-        result: Any = fal_client.subscribe(
-            BACKGROUND_ENDPOINT,
-            arguments={
-                "image_url": image_url,
-                "model": "General Use (Light)",
-                "operating_resolution": "2048x2048",
-                "output_format": "png",
-                "refine_foreground": True,
-                "output_mask": False,
-            },
-            with_logs=True,
-        )
-        image_data = result.get("image") if isinstance(result, dict) else None
-        result_url = image_data.get("url") if isinstance(image_data, dict) else None
-        if not isinstance(result_url, str):
-            raise RuntimeError(
-                f"BiRefNet response for {frame_path.name} did not include image.url."
-            )
-
         destination = output_alpha_dir / frame_path.name
-        _download_asset(result_url, destination)
-        with Image.open(destination) as removed_background:
-            rgba = removed_background.convert("RGBA")
-            alpha = rgba.getchannel("A")
-            if alpha.getextrema() == (255, 255):
-                destination.unlink(missing_ok=True)
-                raise RuntimeError(
-                    f"BiRefNet output for {frame_path.name} has no transparency; "
-                    "the original frame was preserved."
-                )
-            rgba.save(destination, format="PNG")
-            transparent_tiles.append(rgba.copy())
+        rgba = _remove_background_single(frame_path, destination)
+        transparent_tiles.append(rgba)
         records.append(
             {
                 "source": f"frames/{frame_path.name}",
@@ -417,39 +461,125 @@ def remove_background_from_frames(
     if not transparent_tiles:
         return records
 
-    tile_width, tile_height = transparent_tiles[0].size
-    columns = min(4, len(transparent_tiles))
-    rows = (len(transparent_tiles) + columns - 1) // columns
-    atlas = Image.new("RGBA", (tile_width * columns, tile_height * rows), (0, 0, 0, 0))
-    contact_width = min(tile_width, 320)
-    contact_height = max(1, round(tile_height * contact_width / tile_width))
-    contact = Image.new("RGB", (contact_width * columns, (contact_height + 28) * rows), "white")
-    draw = ImageDraw.Draw(contact)
-
-    for index, image in enumerate(transparent_tiles):
-        x = (index % columns) * tile_width
-        y = (index // columns) * tile_height
-        atlas.alpha_composite(image, (x, y))
-
-        thumb = image.resize((contact_width, contact_height), Image.Resampling.LANCZOS)
-        contact_x = (index % columns) * contact_width
-        contact_y = (index // columns) * (contact_height + 28)
-        contact.paste(thumb, (contact_x, contact_y), thumb)
-        draw.text((contact_x + 6, contact_y + contact_height + 6), f"Frame {index:03d}", fill="black")
-
-    atlas.save(output_dir / "spritesheet_alpha.png")
-    contact.save(output_dir / "contact_sheet_alpha.jpg", quality=90)
+    _stack_alpha_tiles(transparent_tiles).save(output_dir / "spritesheet_alpha.png")
+    _write_alpha_contact_sheet(transparent_tiles, output_dir / "contact_sheet_alpha.jpg")
     metadata_path = output_dir / "metadata.json"
     metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
     metadata["background_removal"] = {
         "endpoint": BACKGROUND_ENDPOINT,
         "model": "General Use (Light)",
         "operating_resolution": "2048x2048",
+        "mode": "frames",
+        "api_calls": len(records),
         "frame_count": len(records),
         "frames": records,
     }
     metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return records
+
+
+def remove_background_from_sheet(output_dir: Path) -> list[dict[str, Any]]:
+    """Remove background from the packed spritesheet with one BiRefNet request.
+
+    One call per animation instead of one per frame. BiRefNet resizes its input to
+    ``operating_resolution``, so a wide atlas gives each character fewer pixels than
+    a per-frame call; use ``frames`` mode when edge fidelity matters more than cost.
+    """
+    load_project_env(ROOT / ".env")
+    if not os.environ.get("FAL_KEY"):
+        raise RuntimeError("FAL_KEY is missing. Add it to the environment or project .env file.")
+
+    sheet_path = output_dir / "spritesheet.png"
+    metadata_path = output_dir / "metadata.json"
+    if not sheet_path.is_file():
+        raise FileNotFoundError(f"Spritesheet not found: {sheet_path}. Build it first.")
+    if not metadata_path.is_file():
+        raise FileNotFoundError(f"Metadata not found: {metadata_path}. Build the sheet first.")
+
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    layout = metadata.get("layout") or {}
+    frame_size = metadata.get("frame_size") or {}
+    columns = int(layout.get("columns") or 0)
+    rows = int(layout.get("rows") or 0)
+    frame_count = int(metadata.get("sampled_frame_count") or 0)
+    tile_width = int(frame_size.get("width") or 0)
+    tile_height = int(frame_size.get("height") or 0)
+    if min(columns, rows, frame_count, tile_width, tile_height) < 1:
+        raise ValueError("Spritesheet metadata is missing layout or frame dimensions.")
+    if columns * rows < frame_count:
+        raise ValueError(
+            f"Layout {columns}x{rows} cannot hold {frame_count} frames."
+        )
+
+    with Image.open(sheet_path) as source:
+        sheet_size = source.size
+    expected_size = (tile_width * columns, tile_height * rows)
+    if sheet_size != expected_size:
+        raise ValueError(
+            f"Spritesheet is {sheet_size[0]}x{sheet_size[1]} but layout "
+            f"{columns}x{rows} of {tile_width}x{tile_height} implies "
+            f"{expected_size[0]}x{expected_size[1]}."
+        )
+
+    print(
+        f"Removing background from packed spritesheet {sheet_path.name} "
+        f"({sheet_size[0]}x{sheet_size[1]}) in one request..."
+    )
+    alpha_sheet_path = output_dir / "spritesheet_alpha.png"
+    alpha_sheet = _remove_background_single(sheet_path, alpha_sheet_path)
+    if alpha_sheet.size != expected_size:
+        alpha_sheet = alpha_sheet.resize(expected_size, Image.Resampling.LANCZOS)
+        alpha_sheet.save(alpha_sheet_path, format="PNG")
+
+    output_alpha_dir = output_dir / "frames_alpha"
+    output_alpha_dir.mkdir(parents=True, exist_ok=True)
+    records: list[dict[str, Any]] = []
+    transparent_tiles: list[Image.Image] = []
+    for index in range(frame_count):
+        column = index % columns
+        row = index // columns
+        tile = alpha_sheet.crop(
+            (
+                column * tile_width,
+                row * tile_height,
+                (column + 1) * tile_width,
+                (row + 1) * tile_height,
+            )
+        )
+        frame_name = f"frame_{index:03d}.png"
+        tile.save(output_alpha_dir / frame_name, format="PNG")
+        transparent_tiles.append(tile)
+        records.append(
+            {
+                "source": f"spritesheet.png#{frame_name}",
+                "output": f"frames_alpha/{frame_name}",
+                "width": tile.width,
+                "height": tile.height,
+            }
+        )
+
+    _write_alpha_contact_sheet(transparent_tiles, output_dir / "contact_sheet_alpha.jpg", columns)
+
+    metadata["background_removal"] = {
+        "endpoint": BACKGROUND_ENDPOINT,
+        "model": "General Use (Light)",
+        "operating_resolution": "2048x2048",
+        "mode": "sheet",
+        "api_calls": 1,
+        "frame_count": len(records),
+        "frames": records,
+    }
+    metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    return records
+
+
+def apply_background_removal(output_dir: Path, mode: str = "sheet") -> list[dict[str, Any]]:
+    """Run BiRefNet on one packed sheet (cheapest) or on every sampled frame."""
+    if mode == "sheet":
+        return remove_background_from_sheet(output_dir)
+    if mode == "frames":
+        return remove_background_from_frames(output_dir / "frames", output_dir)
+    raise ValueError("background mode must be 'sheet' or 'frames'.")
 
 
 def process_video(
@@ -460,6 +590,7 @@ def process_video(
     selection: str = "diverse",
     reference_image: Path | None = None,
     reference_similarity_threshold: float = 0.95,
+    keep_reference_endpoints: bool = False,
 ) -> list[dict[str, Any]]:
     """Sample a clip uniformly and produce frames, contact sheet, atlas, and metadata."""
     if not video_path.is_file():
@@ -497,13 +628,26 @@ def process_video(
             raise RuntimeError("Could not decode the video's last frame.")
         first_rgb = cv2.cvtColor(first_bgr, cv2.COLOR_BGR2RGB)
         last_rgb = cv2.cvtColor(last_bgr, cv2.COLOR_BGR2RGB)
-        source_start, source_end, endpoint_comparison = _reference_endpoint_bounds(
-            Image.fromarray(first_rgb),
-            Image.fromarray(last_rgb),
-            frame_total,
-            resolved_reference,
-            reference_similarity_threshold,
-        )
+        if keep_reference_endpoints:
+            source_start, source_end = 0, frame_total
+            endpoint_comparison = {
+                "enabled": False,
+                "reference_image": str(resolved_reference.resolve()) if resolved_reference else None,
+                "similarity_threshold": reference_similarity_threshold,
+                "first_similarity": None,
+                "last_similarity": None,
+                "first_removed": False,
+                "last_removed": False,
+            }
+        else:
+            source_start, source_end, endpoint_comparison = _reference_endpoint_bounds(
+                Image.fromarray(first_rgb),
+                Image.fromarray(last_rgb),
+                frame_total,
+                resolved_reference,
+                reference_similarity_threshold,
+            )
+            endpoint_comparison["enabled"] = True
         candidate_count = source_end - source_start
 
         if selection == "diverse":
@@ -602,7 +746,7 @@ def process_video(
     return records
 
 
-def _confirm_generation(remove_background: bool = False) -> bool:
+def _confirm_generation(remove_background: bool = False, background_mode: str = "sheet") -> bool:
     if not sys.stdin.isatty():
         print(
             "FAL generation can incur charges. Re-run with --yes only after reviewing "
@@ -612,7 +756,10 @@ def _confirm_generation(remove_background: bool = False) -> bool:
         return False
     charge_description = "submit one potentially paid video generation"
     if remove_background:
-        charge_description += " and one potentially paid background-removal request per sampled frame"
+        if background_mode == "sheet":
+            charge_description += " and one potentially paid background-removal request for the packed spritesheet"
+        else:
+            charge_description += " and one potentially paid background-removal request per sampled frame"
     try:
         response = input(
             f"This uploads the reference and will {charge_description}. "
@@ -623,18 +770,22 @@ def _confirm_generation(remove_background: bool = False) -> bool:
     return response == "GENERATE"
 
 
-def _confirm_background_removal() -> bool:
+def _confirm_background_removal(background_mode: str = "sheet") -> bool:
+    if background_mode == "sheet":
+        scope = "one BiRefNet request for the packed spritesheet"
+    else:
+        scope = "one BiRefNet request per sampled frame"
     if not sys.stdin.isatty():
         print(
-            "Background removal can incur one FAL charge per sampled frame. "
+            f"Background removal submits {scope}. "
             "Re-run with --yes only after checking the current endpoint price.",
             file=sys.stderr,
         )
         return False
     try:
         response = input(
-            "This uploads sampled frames and submits potentially paid BiRefNet "
-            "requests. Type REMOVE BACKGROUNDS to continue: "
+            f"This uploads imagery and submits potentially paid BiRefNet requests "
+            f"({scope}). Type REMOVE BACKGROUNDS to continue: "
         )
     except EOFError:
         return False
@@ -655,12 +806,26 @@ def build_parser() -> argparse.ArgumentParser:
     generate_parser.add_argument("--columns", type=int, default=4)
     generate_parser.add_argument("--selection", choices=("diverse", "uniform"), default="diverse")
     generate_parser.add_argument("--reference-similarity-threshold", type=float, default=0.95)
+    generate_parser.add_argument(
+        "--keep-reference-endpoints",
+        action="store_true",
+        help="Keep clip endpoints even when they match the reference (useful for idle loops).",
+    )
     generate_parser.add_argument("--horizontal-padding", type=float, default=0.25)
     generate_parser.add_argument("--vertical-padding", type=float, default=0.10)
     generate_parser.add_argument(
         "--remove-background",
         action="store_true",
-        help="Run one potentially paid BiRefNet request per sampled frame.",
+        help="Run potentially paid BiRefNet background removal after the sheet is built.",
+    )
+    generate_parser.add_argument(
+        "--background-mode",
+        choices=("sheet", "frames"),
+        default="sheet",
+        help=(
+            "sheet: one BiRefNet call per spritesheet (cheapest, lower per-character "
+            "resolution). frames: one call per sampled frame (sharpest edges)."
+        ),
     )
     generate_parser.add_argument(
         "--yes",
@@ -677,9 +842,23 @@ def build_parser() -> argparse.ArgumentParser:
     process_parser.add_argument("--reference-image", type=Path)
     process_parser.add_argument("--reference-similarity-threshold", type=float, default=0.95)
     process_parser.add_argument(
+        "--keep-reference-endpoints",
+        action="store_true",
+        help="Keep clip endpoints even when they match the reference (useful for idle loops).",
+    )
+    process_parser.add_argument(
         "--remove-background",
         action="store_true",
-        help="Run one potentially paid BiRefNet request per sampled frame.",
+        help="Run potentially paid BiRefNet background removal after the sheet is built.",
+    )
+    process_parser.add_argument(
+        "--background-mode",
+        choices=("sheet", "frames"),
+        default="sheet",
+        help=(
+            "sheet: one BiRefNet call per spritesheet (cheapest, lower per-character "
+            "resolution). frames: one call per sampled frame (sharpest edges)."
+        ),
     )
     process_parser.add_argument(
         "--yes",
@@ -706,7 +885,9 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         if args.command == "generate":
-            if not args.yes and not _confirm_generation(args.remove_background):
+            if not args.yes and not _confirm_generation(
+                args.remove_background, args.background_mode
+            ):
                 print("Cancelled; no reference was uploaded and no generation was submitted.")
                 return 2
             video_path = generate_video(
@@ -724,11 +905,16 @@ def main() -> int:
                 args.selection,
                 reference_image=args.reference,
                 reference_similarity_threshold=args.reference_similarity_threshold,
+                keep_reference_endpoints=args.keep_reference_endpoints,
             )
             if args.remove_background:
-                remove_background_from_frames(args.output_dir / "frames", args.output_dir)
+                apply_background_removal(args.output_dir, args.background_mode)
         elif args.command == "process":
-            if args.remove_background and not args.yes and not _confirm_background_removal():
+            if (
+                args.remove_background
+                and not args.yes
+                and not _confirm_background_removal(args.background_mode)
+            ):
                 print("Cancelled; no images were uploaded and no background removal was submitted.")
                 return 2
             records = process_video(
@@ -739,9 +925,10 @@ def main() -> int:
                 args.selection,
                 reference_image=args.reference_image,
                 reference_similarity_threshold=args.reference_similarity_threshold,
+                keep_reference_endpoints=args.keep_reference_endpoints,
             )
             if args.remove_background:
-                remove_background_from_frames(args.output_dir / "frames", args.output_dir)
+                apply_background_removal(args.output_dir, args.background_mode)
         else:
             metadata = prepare_padded_reference(
                 args.reference,

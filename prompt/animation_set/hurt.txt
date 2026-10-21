@@ -1,0 +1,7 @@
+Create one brief hurt reaction for this character, then return to the original idle pose.
+
+The character remains facing right, recoils with a readable flinch and brief stagger, then regains balance. Do not show an attacker, projectile, impact source, blood, wounds, or damage to the costume. Keep the weapon in the character's grasp as one solid, continuous object; do not drop, duplicate, deform, or lose it.
+
+Preserve the original character design, outfit, weapon geometry, colors, proportions, and white background. No impact graphics, weapon trails, particles, sparks, smoke, magical effects, or added shapes.
+
+Camera: fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, hair, feet, and weapon inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects. One reaction only, no loop.

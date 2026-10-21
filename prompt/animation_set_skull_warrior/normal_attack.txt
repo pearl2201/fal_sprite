@@ -1,0 +1,7 @@
+Perform one fast, powerful normal cleaver attack, then return to the original idle pose. One attack only, no loop.
+
+Use a clear preparation, wind-up, committed downward or diagonal cleaver strike, and recovery. The character faces right throughout. The blade is a single solid, physical cleaver on a short haft held in the near hand, and it remains visually singular and continuous in every frame. The single round studded shield stays strapped to the off-hand forearm and must not be duplicated, dropped, or merged into the blade.
+
+Absolutely no weapon effects: no trails, slash arcs, motion trails, afterimages, ghost weapons, duplicated weapon silhouettes, glowing streaks, slash waves, energy blades, impact splashes, particles, sparks, smoke, magical effects, or added shapes around the weapon. Convey speed only through the character's body pose and the physical weapon movement.
+
+Preserve the original character design exactly: horned skull mask, black fur mantle, teal coat with yellow trim, red scarf and sash, bandaged forearms, strapped boots, and the same proportions and colors. Fixed orthographic side view, locked camera, constant framing and character scale. Keep the entire character, horns, hair, feet, cleaver, and shield inside frame with generous margins. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects.

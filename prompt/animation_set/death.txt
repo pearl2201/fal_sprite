@@ -1,0 +1,7 @@
+Create one clear death animation for this character, ending in a still resting pose.
+
+The character faces right, weakens, loses balance, and falls safely to the ground in a readable controlled motion. End with the whole character visible and motionless; do not fade out, disappear, dissolve, or leave the frame. Keep the weapon as one solid, continuous physical object. It may settle beside the character without clipping or duplication.
+
+Preserve the original character design, outfit, weapon geometry, colors, proportions, and white background. Non-graphic: no blood, wounds, gore, attacker, projectile, particles, smoke, magical effects, or added shapes.
+
+Camera: fixed orthographic side view, locked camera, constant framing. Keep the entire character, hair, feet, and weapon inside frame with generous margins throughout the fall. No camera movement, zoom, pan, rotation, or reframing. Pure white background, no environment, no text, no additional objects. One death action only, no loop.
